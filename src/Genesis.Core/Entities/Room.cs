@@ -6,20 +6,15 @@ namespace Genesis.Core.Entities;
 [Table(nameof(Room))]
 public sealed class Room : Entity
 {
+    public Room(string name) : base(name)
+    {
+    }
+
     [NotMapped]
     public Item[] Items
     {
         get => [.. _entities.Values.OfType<Item>()];
-        init
-        {
-            foreach (var item in value)
-            {
-                if (_entities.TryAdd(item.EntityId, item) is false)
-                {
-                    throw new ArgumentException($"Failed to register room: {item.EntityId}");
-                }
-            }
-        }
+        init => value.ForEach(Register);
     }
 
     protected override void LoadMembers(GameEngine engine)

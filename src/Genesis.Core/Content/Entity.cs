@@ -10,7 +10,12 @@ public abstract class Entity
     private Entity? _parent;
     private readonly Dictionary<string, Dynamic> _properties = new(StringComparer.OrdinalIgnoreCase);
 
-    [Key]
+    public Entity(string name)
+    {
+        Name = name ?? throw new ArgumentNullException(nameof(name));
+    }
+
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid EntityId { get; private set; } = Guid.NewGuid();
 
     [NotMapped]
@@ -57,7 +62,7 @@ public abstract class Entity
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    public void Load(GameEngine engine, Entity? parent = null)
+    public void Load(GameEngine engine, Entity? parent)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
@@ -70,7 +75,17 @@ public abstract class Entity
 
         parent?.Register(this);
 
-        LoadMembers(engine);
+        if (_entities.IsEmpty is false)
+        {
+            foreach (var entity in _entities.Values)
+            {
+                entity.Load(engine, null);
+            }
+        }
+        else
+        {
+            LoadMembers(engine);
+        }
 
         IsLoaded = true;
     }
@@ -93,6 +108,8 @@ public abstract class Entity
         }
 
         engine.Content.Save(this);
+
+        IsLoaded = true;
     }
 
     public void Unload(GameEngine engine)

@@ -60,6 +60,9 @@ public sealed class Manager
 
     internal void Start(GameEngine engine, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(engine);
+        cancellationToken.ThrowIfCancellationRequested();
+
         _tcpListener.Start();
 
         AcceptSocketAsync(engine).FireAndForget(ex =>
@@ -68,9 +71,10 @@ public sealed class Manager
         });
     }
 
-    internal void Stop(CancellationToken cancellationToken)
+    internal void Stop(GameEngine engine, CancellationToken cancellationToken)
     {
-
+        ArgumentNullException.ThrowIfNull(engine);
+        cancellationToken.ThrowIfCancellationRequested();
     }
 
     internal void Unregister(Client client)

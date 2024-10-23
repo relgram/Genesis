@@ -6,6 +6,10 @@ namespace Genesis.Core.Entities;
 [Table(nameof(Zone))]
 public sealed class Zone : Entity
 {
+    public Zone(string name) : base(name)
+    {
+    }
+
     [NotMapped]
     public Area[] Areas
     {

@@ -55,13 +55,9 @@ public sealed class Manager
 
         _logger.LogInformation("Saving: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
 
-        var state = entity.IsLoaded ? EntityState.Modified : EntityState.Added;
-
         using var context = _contextFactory.CreateDbContext();
 
-        context.Attach(entity).State = state;
-
-        context.SaveChanges();
+        context.Upsert(entity).Run();
     }
 
     internal void Start(GameEngine engine, CancellationToken cancellationToken)
@@ -71,7 +67,7 @@ public sealed class Manager
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(index => _updateTimers[index] = new(engine));
 
-        Parallel.ForEach(Query<Zone>(x => true), zone => zone.Load(engine));
+        Parallel.ForEach(Query<Zone>(x => true), zone => zone.Load(engine, null));
     }
 
     internal void Stop(GameEngine engine, CancellationToken cancellationToken)
@@ -83,6 +79,7 @@ public sealed class Manager
 
         Parallel.ForEach(Find<Zone>(x => true), zone => zone.Save(engine, true));
     }
+
     /// <summary>
     /// Unregisters entity with manager and removes from assigned update timer
     /// </summary>
