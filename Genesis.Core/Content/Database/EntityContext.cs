@@ -7,9 +7,13 @@ namespace Genesis.Core.Content.Database;
 
 internal sealed class EntityContext : DbContext
 {
+    public DbSet<Actor> Actors => Set<Actor>();
+
     public DbSet<Area> Areas => Set<Area>();
 
     public DbSet<Item> Items => Set<Item>();
+
+    public DbSet<Player> Players => Set<Player>();
 
     public DbSet<Room> Rooms => Set<Room>();
 

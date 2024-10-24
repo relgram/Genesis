@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Genesis.Core.Network;
 
 namespace Genesis.Core.Content;
 
@@ -14,6 +15,9 @@ public abstract class Entity
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
     }
+
+    [NotMapped]
+    internal Client? Client { get; set; }
 
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid EntityId { get; private set; } = Guid.NewGuid();
@@ -41,9 +45,10 @@ public abstract class Entity
     public Guid ParentId { get; private set; } = Guid.Empty;
 
     [NotMapped]
-    internal Dictionary<string, Dynamic> Properties
+    public Dictionary<string, Dynamic> Properties
     {
-        get => _properties.ToDictionary(x => x.Key, x => x.Value);
+        internal get => _properties.ToDictionary(x => x.Key, x => x.Value);
+        init => value.ForEach(x => _properties[x.Key] = x.Value);
     }
 
     protected virtual void LoadMembers(GameEngine engine)
@@ -101,10 +106,10 @@ public abstract class Entity
 
         if (cascade is true)
         {
-            foreach (var entity in _entities.Values)
+            Parallel.ForEach(_entities.Values, entity =>
             {
                 entity.Save(engine, true);
-            }
+            });
         }
 
         engine.Content.Save(this);
@@ -126,6 +131,8 @@ public abstract class Entity
         Parent?.Unregister(this);
 
         IsLoaded = false;
+
+        Client = null;
     }
 
     public virtual void Unregister(Entity entity)

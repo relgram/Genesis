@@ -3,10 +3,10 @@ using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Room))]
-public sealed class Room : Entity
+[Table(nameof(Actor))]
+public sealed class Actor : Entity
 {
-    public Room(string name) : base(name)
+    public Actor(string name) : base(name)
     {
     }
 

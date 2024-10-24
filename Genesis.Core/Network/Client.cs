@@ -29,7 +29,7 @@ public sealed class Client
 
     public Guid ClientId { get; } = Guid.NewGuid();
 
-    public Player? Player { get; set; }
+    public Player? Player { get; private set; }
 
     public string Procedure { get; set; } = "Login";
 
@@ -122,15 +122,15 @@ public sealed class Client
         }
     }
 
-    public void Disconnect(GameEngine engine, string message)
+    public void Disconnect(GameEngine engine, string message = "Disconnected")
     {
         try
         {
-            var bytes = Encoding.UTF8.GetBytes($"<alert>*** {message} ***</alert>");
+            SendBytes(Encoding.UTF8.GetBytes($"*** {message} ***"));
 
-            //Entity?.Unload(engine.Content, true);
+            Player?.Save(engine, cascade: true);
 
-            SendBytes(bytes);
+            Player?.Unload(engine);
         }
         catch (Exception ex)
         {
@@ -138,9 +138,9 @@ public sealed class Client
         }
         finally
         {
-            engine.Network.Unregister(this);
-
             _socket.Shutdown(SocketShutdown.Both);
+
+            engine.Network.Unregister(this);
 
             _socket.Close(CLOSE_TIMEOUT);
 
@@ -159,5 +159,15 @@ public sealed class Client
                 _logger.LogWarning(ex, "SendBytes failed unexpectedly");
             });
         }
+    }
+
+    public void SetPlayer(GameEngine engine, Player player)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(player);
+
+        Player?.Disconnect(engine);
+        player.Client = this;
+        Player = player;
     }
 }
