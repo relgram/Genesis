@@ -39,7 +39,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Register: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
+        _logger.LogInformation("Register {type}: {entityId}", entity.GetType().Name, entity.EntityId);
 
         if (_entities[entity.GetType()].TryAdd(entity.EntityId, entity) is true)
         {
@@ -87,7 +87,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Unregister: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
+        _logger.LogInformation("Unregister {type}: {entityId}", entity.GetType().Name, entity.EntityId);
 
         if (_entities[entity.GetType()].TryRemove(entity.EntityId, out var _) is true)
         {

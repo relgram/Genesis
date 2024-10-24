@@ -47,22 +47,20 @@ public sealed class Client
     private void ProcessMessage(GameEngine engine, string message)
     {
         ArgumentNullException.ThrowIfNull(engine);
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
 
         try
         {
-            if (string.IsNullOrWhiteSpace(message) is false)
+            if (string.IsNullOrWhiteSpace(Procedure) is true)
             {
-                if (string.IsNullOrWhiteSpace(Procedure) is true)
-                {
-                    //if (Entity is not null)
-                    //{
-                    //    engine.Runtime.DoAction(engine, Entity, message);
-                    //}
-                }
-                else
-                {
-                    //engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this, message);
-                }
+                //if (Player is not null)
+                //{
+                //    engine.Runtime.DoAction(engine, Player, message.Trim());
+                //}
+            }
+            else
+            {
+                engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this, message);
             }
         }
         catch (Exception ex)
@@ -113,6 +111,8 @@ public sealed class Client
             {
                 Disconnect(engine, "ReceiveAsync failed unexpectedly");
             });
+
+            engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this);
         }
         catch (Exception ex)
         {
@@ -120,8 +120,6 @@ public sealed class Client
 
             _logger.LogWarning(ex, "Start failed unexpectedly");
         }
-
-        //engine.Runtime.DoProcedure(engine, this, Procedure, $"Do{Procedure}");
     }
 
     public void Disconnect(GameEngine engine, string message)

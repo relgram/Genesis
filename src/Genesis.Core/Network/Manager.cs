@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using Genesis.Core.Content;
 using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Network;
@@ -34,7 +35,10 @@ public sealed class Manager
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
+            if (ex is not SocketException)
+            {
+                _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
+            }
         }
         finally
         {
@@ -51,6 +55,8 @@ public sealed class Manager
     internal void Register(Client client)
     {
         ArgumentNullException.ThrowIfNull(client);
+
+        _logger.LogInformation("Register client: {address}", client.Address);
 
         if (_clients.TryAdd(client.ClientId, client) is false)
         {
@@ -75,10 +81,18 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
+
+        _tcpListener.Stop();
+
+        _clients.Values.ForEach(x => x.Disconnect(engine, "Server Shutdown"));
     }
 
     internal void Unregister(Client client)
     {
+        ArgumentNullException.ThrowIfNull(client);
+
+        _logger.LogInformation("Unregister client: {address}", client.Address);
+
         if (_clients.TryRemove(client.ClientId, out var _) is false)
         {
             throw new ArgumentException($"Failed to unregister client: {client.Address}");
