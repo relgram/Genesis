@@ -1,7 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Principal;
 using Genesis.Core.Network;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Genesis.Core.Content;
 
@@ -51,6 +53,8 @@ public abstract class Entity
         init => value.ForEach(x => _properties[x.Key] = x.Value);
     }
 
+    protected virtual Entity? FindMember(string keyword, ref int index) => null;
+
     protected virtual void LoadMembers(GameEngine engine)
     {
 
@@ -65,6 +69,11 @@ public abstract class Entity
     {
         get => _properties.GetValueOrDefault(key, Dynamic.Empty);
         set => _properties[key] = value ?? Dynamic.Empty;
+    }
+
+    public Entity? FindMember(string keyword, int index = 0)
+    {
+        return keyword.IsNullOrEmpty() ? default : FindMember(keyword, ref index);
     }
 
     public void Load(GameEngine engine, Entity? parent)

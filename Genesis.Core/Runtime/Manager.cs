@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Loader;
+using System.Text;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -58,6 +59,58 @@ public sealed class Manager
         }
     }
 
+    public void DoAction(GameEngine engine, Content.Entity entity, string message)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentException.ThrowIfNullOrEmpty(message);
+
+        try
+        {
+            if (message[0] == '\'')
+            {
+                message = $"say {message[1..]}";
+            }
+
+            var name = message.Split(' ')[0];
+
+            lock (_internalLock)
+            {
+                if (_actions.ContainsKey(name) == true)
+                {
+                    if (_actions[name].Execute(engine, entity, message) == false)
+                    {
+                        entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you were referring to.\n>\n"));
+                    }
+
+                    return;
+                }
+
+                foreach (var item in _actions)
+                {
+                    if (item.Key.Length >= name.Length)
+                    {
+                        if (item.Key.StartsWith(name, true, null))
+                        {
+                            if (item.Value.Execute(engine, entity, message) == false)
+                            {
+                                entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you were referring to.\r\n>"));
+                            }
+
+                            return;
+                        }
+                    }
+                }
+            }
+
+            entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("Please rephrase that command.\n>\n"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Action failed unexpectedly");
+        }
+    }
+
     public bool DoProcedure(GameEngine engine, string name, string method, params object[] args)
     {
         ArgumentNullException.ThrowIfNull(engine);
@@ -101,7 +154,7 @@ public sealed class Manager
 
                 var context = new AssemblyLoadContext("Genesis", isCollectible: true);
 
-                //sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Loading...\n>\n"));
+                sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Loading Library...\n>\n"));
 
                 var assembly = context.LoadFromAssemblyPath(fileName);
 
@@ -134,13 +187,13 @@ public sealed class Manager
             _logger.LogInformation("Loaded {count} Actions", _actions.Count);
             _logger.LogInformation("Loaded {count} Procedures", _procedures.Count);
 
-            //sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_actions.Count} Actions\n>\n"));
-            //sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_procedures.Count} Procedures\n>\n"));
+            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_actions.Count} Actions\n>\n"));
+            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_procedures.Count} Procedures\n>\n"));
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "LoadGameplay Failed Unexpectedly");
-            //sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"LoadGameplay Failed Unexpectedly:{ex.Message}"));
+            _logger.LogCritical(ex, "LoadGameplay failed unexpectedly");
+            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"LoadGameplay failed unexpectedly:{ex.Message}"));
         }
     }
 }

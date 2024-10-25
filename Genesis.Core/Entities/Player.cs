@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Genesis.Core.Content;
-using Genesis.Core.Network;
 
 namespace Genesis.Core.Entities;
 

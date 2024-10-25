@@ -47,20 +47,22 @@ public sealed class Client
     private void ProcessMessage(GameEngine engine, string message)
     {
         ArgumentNullException.ThrowIfNull(engine);
-        ArgumentException.ThrowIfNullOrWhiteSpace(message);
 
         try
         {
-            if (string.IsNullOrWhiteSpace(Procedure) is true)
+            if (string.IsNullOrWhiteSpace(message) is false)
             {
-                //if (Player is not null)
-                //{
-                //    engine.Runtime.DoAction(engine, Player, message.Trim());
-                //}
-            }
-            else
-            {
-                engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this, message);
+                if (string.IsNullOrWhiteSpace(Procedure) is true)
+                {
+                    if (Player is not null)
+                    {
+                        engine.Runtime.DoAction(engine, Player, message.Trim());
+                    }
+                }
+                else
+                {
+                    engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this, message.Trim());
+                }
             }
         }
         catch (Exception ex)
@@ -74,6 +76,7 @@ public sealed class Client
                 ReceiveAsync(engine).FireAndForget(ex =>
                 {
                     Disconnect(engine, "Connection failed unexpectedly");
+                    _logger.LogWarning(ex, "ProcessMessage failed unexpectedly");
                 });
             }
         }
@@ -126,7 +129,7 @@ public sealed class Client
     {
         try
         {
-            SendBytes(Encoding.UTF8.GetBytes($"*** {message} ***"));
+            SendBytes(Encoding.UTF8.GetBytes($"<color red>{message}</color>"));
 
             Player?.Save(engine, cascade: true);
 
@@ -166,7 +169,8 @@ public sealed class Client
         ArgumentNullException.ThrowIfNull(engine);
         ArgumentNullException.ThrowIfNull(player);
 
-        Player?.Disconnect(engine);
+        Procedure = string.Empty;
+        Player?.Unload(engine);
         player.Client = this;
         Player = player;
     }
