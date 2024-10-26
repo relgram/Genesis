@@ -168,6 +168,14 @@ public sealed class Manager
                             {
                                 _logger.LogWarning("Duplicate action found: {action}", action.Name);
                             }
+
+                            if (action.Alias is not null)
+                            {
+                                if (_actions.TryAdd(action.Alias, action) is false)
+                                {
+                                    _logger.LogWarning("Duplicate action found: {action}", action.Alias);
+                                }
+                            }
                         }
                     }
 

@@ -11,6 +11,13 @@ public sealed class Item : Entity
     }
 
     [NotMapped]
+    public Effect[] Effects
+    {
+        get => [.. _entities.Values.OfType<Effect>()];
+        init => value.ForEach(Register);
+    }
+
+    [NotMapped]
     public Item[] Items
     {
         get => [.. _entities.Values.OfType<Item>()];
@@ -19,6 +26,9 @@ public sealed class Item : Entity
 
     protected override void LoadMembers(GameEngine engine)
     {
+        var effects = engine.Content.Query<Effect>(x => x.ParentId == EntityId);
+        Parallel.ForEach(effects, effect => effect.Load(engine, this));
+
         var items = engine.Content.Query<Item>(x => x.ParentId == EntityId);
         Parallel.ForEach(items, item => item.Load(engine, this));
     }
@@ -26,6 +36,15 @@ public sealed class Item : Entity
     public override void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        if (entity is Effect effect)
+        {
+            if (_entities.TryAdd(effect.EntityId, effect) is true)
+            {
+                effect.Parent = this;
+                return;
+            }
+        }
 
         if (entity is Item item)
         {
@@ -42,6 +61,15 @@ public sealed class Item : Entity
     public override void Unregister(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        if (entity is Effect effect)
+        {
+            if (_entities.TryRemove(effect.EntityId, out var _) is true)
+            {
+                effect.Parent = null;
+                return;
+            }
+        }
 
         if (entity is Item item)
         {

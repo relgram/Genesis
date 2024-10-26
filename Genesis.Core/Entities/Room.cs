@@ -11,6 +11,13 @@ public sealed class Room : Entity
     }
 
     [NotMapped]
+    public Actor[] Actors
+    {
+        get => [.. _entities.Values.OfType<Actor>()];
+        init => value.ForEach(Register);
+    }
+
+    [NotMapped]
     public Item[] Items
     {
         get => [.. _entities.Values.OfType<Item>()];
@@ -23,15 +30,37 @@ public sealed class Room : Entity
         get => [.. _entities.Values.OfType<Player>()];
     }
 
+    [NotMapped]
+    public Portal[] Portals
+    {
+        get => [.. _entities.Values.OfType<Portal>()];
+        init => value.ForEach(Register);
+    }
+
     protected override void LoadMembers(GameEngine engine)
     {
+        var actors = engine.Content.Query<Actor>(x => x.ParentId == EntityId);
+        Parallel.ForEach(actors, actor => actor.Load(engine, this));
+
         var items = engine.Content.Query<Item>(x => x.ParentId == EntityId);
         Parallel.ForEach(items, item => item.Load(engine, this));
+
+        var portals = engine.Content.Query<Portal>(x => x.ParentId == EntityId);
+        Parallel.ForEach(portals, portal => portal.Load(engine, this));
     }
 
     public override void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        if (entity is Actor actor)
+        {
+            if (_entities.TryAdd(actor.EntityId, actor) is true)
+            {
+                actor.Parent = this;
+                return;
+            }
+        }
 
         if (entity is Item item)
         {
@@ -51,12 +80,30 @@ public sealed class Room : Entity
             }
         }
 
+        if (entity is Portal portal)
+        {
+            if (_entities.TryAdd(portal.EntityId, portal) is true)
+            {
+                portal.Parent = this;
+                return;
+            }
+        }
+
         base.Register(entity);
     }
 
     public override void Unregister(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        if (entity is Actor actor)
+        {
+            if (_entities.TryRemove(actor.EntityId, out var _) is true)
+            {
+                actor.Parent = null;
+                return;
+            }
+        }
 
         if (entity is Item item)
         {
@@ -72,6 +119,15 @@ public sealed class Room : Entity
             if (_entities.TryRemove(player.EntityId, out var _) is true)
             {
                 player.Parent = null;
+                return;
+            }
+        }
+
+        if (entity is Portal portal)
+        {
+            if (_entities.TryRemove(portal.EntityId, out var _) is true)
+            {
+                portal.Parent = null;
                 return;
             }
         }

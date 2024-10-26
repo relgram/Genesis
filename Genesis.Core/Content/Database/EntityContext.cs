@@ -11,9 +11,13 @@ internal sealed class EntityContext : DbContext
 
     public DbSet<Area> Areas => Set<Area>();
 
+    public DbSet<Effect> Effects => Set<Effect>();
+
     public DbSet<Item> Items => Set<Item>();
 
     public DbSet<Player> Players => Set<Player>();
+
+    public DbSet<Portal> Portals => Set<Portal>();
 
     public DbSet<Room> Rooms => Set<Room>();
 
