@@ -8,6 +8,5 @@ public sealed class Portal : Entity
 {
     public Portal(string name) : base(name)
     {
-
     }
 }

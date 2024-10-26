@@ -195,12 +195,13 @@ public sealed class Manager
             _logger.LogInformation("Loaded {count} Actions", _actions.Count);
             _logger.LogInformation("Loaded {count} Procedures", _procedures.Count);
 
-            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_actions.Count} Actions\n>\n"));
+            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_actions.Count} Actions\n"));
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_procedures.Count} Procedures\n>\n"));
         }
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "LoadGameplay failed unexpectedly");
+
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"LoadGameplay failed unexpectedly:{ex.Message}"));
         }
     }

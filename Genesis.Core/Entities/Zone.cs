@@ -40,6 +40,7 @@ public sealed class Zone : Entity
         {
             if (_entities.TryAdd(area.EntityId, area) is true)
             {
+                area.Parent?.Unregister(area);
                 area.Parent = this;
                 return;
             }

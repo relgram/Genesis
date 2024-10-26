@@ -31,6 +31,7 @@ public sealed class Area : Entity
         {
             if (_entities.TryAdd(room.EntityId, room) is true)
             {
+                room.Parent?.Unregister(room);
                 room.Parent = this;
                 return;
             }

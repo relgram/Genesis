@@ -57,6 +57,7 @@ public sealed class Room : Entity
         {
             if (_entities.TryAdd(actor.EntityId, actor) is true)
             {
+                actor.Parent?.Unregister(actor);
                 actor.Parent = this;
                 return;
             }
@@ -66,6 +67,7 @@ public sealed class Room : Entity
         {
             if (_entities.TryAdd(item.EntityId, item) is true)
             {
+                item.Parent?.Unregister(item);
                 item.Parent = this;
                 return;
             }
@@ -75,6 +77,7 @@ public sealed class Room : Entity
         {
             if (_entities.TryAdd(player.EntityId, player) is true)
             {
+                player.Parent?.Unregister(player);
                 player.Parent = this;
                 return;
             }
@@ -84,6 +87,7 @@ public sealed class Room : Entity
         {
             if (_entities.TryAdd(portal.EntityId, portal) is true)
             {
+                portal.Parent?.Unregister(portal);
                 portal.Parent = this;
                 return;
             }

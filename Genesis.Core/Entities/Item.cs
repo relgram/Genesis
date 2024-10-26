@@ -41,6 +41,7 @@ public sealed class Item : Entity
         {
             if (_entities.TryAdd(effect.EntityId, effect) is true)
             {
+                effect.Parent?.Unregister(effect);
                 effect.Parent = this;
                 return;
             }
@@ -50,6 +51,7 @@ public sealed class Item : Entity
         {
             if (_entities.TryAdd(item.EntityId, item) is true)
             {
+                item.Parent?.Unregister(item);
                 item.Parent = this;
                 return;
             }

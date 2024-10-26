@@ -31,6 +31,7 @@ public sealed class Actor : Entity
         {
             if (_entities.TryAdd(item.EntityId, item) is true)
             {
+                item.Parent?.Unregister(item);
                 item.Parent = this;
                 return;
             }

@@ -106,6 +106,14 @@ public sealed class Manager
     }
 
     /// <summary>
+    /// Returns registered entity of type T with specified entityId
+    /// </summary>
+    public T? Get<T>(Guid entityId) where T : Entity
+    {
+        return _entities[typeof(T)].GetValueOrDefault(entityId) as T;
+    }
+
+    /// <summary>
     /// Returns array of all database entities of type T matching provided predicate
     /// </summary>
     public T[] Query<T>(Expression<Func<T, bool>> predicate) where T : Entity
