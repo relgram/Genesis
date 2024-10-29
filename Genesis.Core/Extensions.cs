@@ -13,6 +13,24 @@ public static class Extensions
         return @this;
     }
 
+    public static T? Find<T>(this IEnumerable<T> @this, Predicate<T> match, ref int index)
+    {
+        foreach (var item in @this)
+        {
+            if (match(item) == true)
+            {
+                if (index <= 0)
+                {
+                    return item;
+                }
+
+                index -= 1;
+            }
+        }
+
+        return default;
+    }
+
     public static void FireAndForget(this Task @this, Action<Exception>? callback = null)
     {
         if ((@this.IsCompleted == false) || (@this.IsFaulted == true))

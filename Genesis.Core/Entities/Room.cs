@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Principal;
 using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
@@ -35,6 +36,19 @@ public sealed class Room : Entity
     {
         get => [.. _entities.Values.OfType<Portal>()];
         init => value.ForEach(Register);
+    }
+
+    protected override Entity? FindMember(string keyword, ref int index)
+    {
+        static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
+
+        if (Portals.Find(x => IsMatch(x.Name, keyword), ref index) is Portal portal) return portal;
+
+        if (Players.Find(x => IsMatch(x.Name, keyword), ref index) is Player player) return player;
+
+        if (Items.Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
+
+        return base.FindMember(keyword, ref index);
     }
 
     protected override void LoadMembers(GameEngine engine)

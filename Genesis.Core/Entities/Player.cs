@@ -24,6 +24,15 @@ public sealed class Player : Entity
         init => value.ForEach(Register);
     }
 
+    protected override Entity? FindMember(string keyword, ref int index)
+    {
+        static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
+
+        if (Items.Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
+
+        return base.FindMember(keyword, ref index);
+    }
+
     protected override void LoadMembers(GameEngine engine)
     {
         var effects = engine.Content.Query<Effect>(x => x.ParentId == EntityId);
