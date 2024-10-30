@@ -33,6 +33,24 @@ public sealed class Manager
     }
 
     /// <summary>
+    /// Delete entity from database
+    /// </summary>
+    internal void Delete(Entity entity)
+    {
+        ArgumentNullException.ThrowIfNull(nameof(entity));
+
+        _logger.LogInformation("Deleting: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
+
+        var state = entity.IsLoaded ? EntityState.Deleted : EntityState.Detached;
+
+        using var context = _contextFactory.CreateDbContext();
+
+        context.Remove(entity).State = state;
+
+        context.SaveChanges();
+    }
+
+    /// <summary>
     /// Registers entity with manager and assigns to update timer
     /// </summary>
     internal void Register(Entity entity)
@@ -49,6 +67,9 @@ public sealed class Manager
         }
     }
 
+    /// <summary>
+    /// Save entity to database
+    /// </summary>
     internal void Save(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(nameof(entity));

@@ -71,6 +71,23 @@ public abstract class Entity
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
+    public void Destroy(GameEngine engine, bool cascade)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        if (cascade is true)
+        {
+            Parallel.ForEach(_entities.Values, entity =>
+            {
+                entity.Destroy(engine, cascade);
+            });
+        }
+
+        engine.Content.Delete(this);
+
+        Unload(engine);
+    }
+
     public Entity? FindMember(string keyword, int index = 0)
     {
         return keyword.IsNullOrEmpty() ? default : FindMember(keyword, ref index);
