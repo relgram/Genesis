@@ -11,19 +11,10 @@ public sealed class Zone : Entity
     }
 
     [NotMapped]
-    public Area[] Areas
+    public ICollection<Area> Areas
     {
         get => [.. _entities.Values.OfType<Area>()];
-        init
-        {
-            foreach (var area in value)
-            {
-                if (_entities.TryAdd(area.EntityId, area) is false)
-                {
-                    throw new ArgumentException($"Failed to register area: {area.EntityId}");
-                }
-            }
-        }
+        init => value.ForEach(Register);
     }
 
     protected override void LoadMembers(GameEngine engine)

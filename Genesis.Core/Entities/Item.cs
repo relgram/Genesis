@@ -8,10 +8,11 @@ public sealed class Item : Entity
 {
     public Item(string name) : base(name)
     {
+
     }
 
     [NotMapped]
-    public Effect[] Effects
+    public ICollection<Effect> Effects
     {
         get => [.. _entities.Values.OfType<Effect>()];
         init => value.ForEach(Register);

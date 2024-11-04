@@ -11,7 +11,7 @@ public sealed class Area : Entity
     }
 
     [NotMapped]
-    public Room[] Rooms
+    public ICollection<Room> Rooms
     {
         get => [.. _entities.Values.OfType<Room>()];
         init => value.ForEach(Register);

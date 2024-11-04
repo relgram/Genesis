@@ -12,27 +12,34 @@ public sealed class Room : Entity
     }
 
     [NotMapped]
-    public Actor[] Actors
+    public ICollection<Actor> Actors
     {
         get => [.. _entities.Values.OfType<Actor>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
-    public Item[] Items
+    public ICollection<Effect> Effects
+    {
+        get => [.. _entities.Values.OfType<Effect>()];
+        init => value.ForEach(Register);
+    }
+
+    [NotMapped]
+    public ICollection<Item> Items
     {
         get => [.. _entities.Values.OfType<Item>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
-    public Player[] Players
+    public ICollection<Player> Players
     {
         get => [.. _entities.Values.OfType<Player>()];
     }
 
     [NotMapped]
-    public Portal[] Portals
+    public ICollection<Portal> Portals
     {
         get => [.. _entities.Values.OfType<Portal>()];
         init => value.ForEach(Register);

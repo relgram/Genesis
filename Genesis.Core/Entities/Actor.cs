@@ -11,7 +11,7 @@ public sealed class Actor : Entity
     }
 
     [NotMapped]
-    public Item[] Items
+    public ICollection<Item> Items
     {
         get => [.. _entities.Values.OfType<Item>()];
         init => value.ForEach(Register);
