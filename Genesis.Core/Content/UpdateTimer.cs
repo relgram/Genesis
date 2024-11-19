@@ -6,6 +6,7 @@ internal sealed class UpdateTimer : IDisposable
 {
     private readonly GameEngine _engine;
     private readonly ConcurrentDictionary<Guid, Entity> _entities = [];
+    private readonly object _executeLock = new();
     private readonly Timer _timer;
 
     public UpdateTimer(GameEngine engine)
@@ -16,11 +17,12 @@ internal sealed class UpdateTimer : IDisposable
 
     private void Elapsed(object? sender)
     {
-        Entity[] entities = [.. _entities.Values];
-
-        foreach (var entity in entities.Where(x => x.IsLoaded))
+        lock (_executeLock)
         {
-            _engine.Runtime.DoProcedure(_engine, "Update", "DoUpdate", entity);
+            foreach (var entity in _entities.Values)
+            {
+                _engine.Runtime.DoProcedure(_engine, "Update", "DoUpdate", entity);
+            }
         }
     }
 

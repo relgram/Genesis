@@ -11,6 +11,7 @@ namespace Genesis.Core.Content;
 public sealed class Manager
 {
     private const string CONNECTION_STRING = @"Server=(local);Database=Shadowlance;TrustServerCertificate=true;Trusted_Connection=True;";
+    private const string DELETE_SQL_FORMAT = "DELETE FROM {0} where EntityId = @p0";
 
     private readonly PooledDbContextFactory<EntityContext> _contextFactory;
     private readonly Dictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = [];
@@ -35,19 +36,17 @@ public sealed class Manager
     /// <summary>
     /// Delete entity from database
     /// </summary>
-    internal void Delete(Entity entity)
+    internal void Delete<T>(T entity) where T : Entity
     {
         ArgumentNullException.ThrowIfNull(nameof(entity));
 
         _logger.LogInformation("Deleting: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
 
-        var state = entity.IsLoaded ? EntityState.Deleted : EntityState.Detached;
+        var type = entity.GetType().Name;
 
         using var context = _contextFactory.CreateDbContext();
 
-        context.Remove(entity).State = state;
-
-        context.SaveChanges();
+        context.Database.ExecuteSqlRaw(string.Format(DELETE_SQL_FORMAT, type), entity.EntityId);
     }
 
     /// <summary>
