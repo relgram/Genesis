@@ -46,7 +46,12 @@ public sealed class Manager
 
         using var context = _contextFactory.CreateDbContext();
 
-        context.Database.ExecuteSqlRaw(string.Format(DELETE_SQL_FORMAT, type), entity.EntityId);
+        var sql = string.Format("DELETE FROM {0} WHERE EntityId = @p0", type);
+
+        context.Database.ExecuteSqlRawAsync(sql, entity.EntityId).FireAndForget(ex =>
+        {
+            _logger.LogWarning("Failed to delete {type}: {entityId}", type, entity.EntityId);
+        });
     }
 
     /// <summary>
