@@ -1,9 +1,8 @@
 ﻿using System.Collections.Concurrent;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Principal;
+using System.Reflection;
+using System.Text.Json.Serialization;
+using Genesis.Core.Entities.Attributes;
 using Genesis.Core.Network;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Genesis.Core.Content;
 
@@ -18,35 +17,27 @@ public abstract class Entity
         Name = name ?? throw new ArgumentNullException(nameof(name));
     }
 
-    [NotMapped]
+    [JsonIgnore]
     internal Client? Client { get; set; }
 
-    [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
-    public Guid EntityId { get; private set; } = Guid.NewGuid();
+    public Guid EntityId { get; init; } = Guid.NewGuid();
 
-    [NotMapped]
+    [JsonIgnore]
+    internal bool IsEnabled { get; private set; }
+
+    [JsonIgnore]
     internal bool IsLoaded { get; private set; }
 
     public string Name { get; set; } = string.Empty;
 
-    [NotMapped]
+    [JsonIgnore]
     public Entity? Parent
     {
         get => _parent;
-        internal set
-        {
-            if (value is not null)
-            {
-                ParentId = value.EntityId;
-            }
-
-            _parent = value;
-        }
+        internal set => _parent = value;
     }
 
-    public Guid ParentId { get; private set; } = Guid.Empty;
-
-    [NotMapped]
+    [JsonInclude]
     public Dictionary<string, Dynamic> Properties
     {
         internal get => _properties.ToDictionary(x => x.Key, x => x.Value);
@@ -55,68 +46,104 @@ public abstract class Entity
 
     protected virtual Entity? FindMember(string keyword, ref int index) => null;
 
-    protected virtual void LoadMembers(GameEngine engine)
-    {
-
-    }
-
-    protected virtual void UnloadMembers(GameEngine engine)
-    {
-
-    }
-
     public Dynamic this[string key]
     {
         get => _properties.GetValueOrDefault(key, Dynamic.Empty);
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    public void Destroy(GameEngine engine, bool cascade)
+    private void DisableMembers(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
-        if (cascade is true)
+        foreach (var property in GetType().GetProperties())
         {
-            Parallel.ForEach(_entities.Values, entity =>
+            if (property.GetCustomAttribute<MemberAttribute>() is var attribute)
             {
-                entity.Destroy(engine, cascade);
-            });
+                if (attribute is not null)
+                {
+                    (property.GetValue(this) as IEnumerable<Entity>)?.ForEach(entity => entity.Disable(engine));
+                }
+            }
         }
+    }
 
-        engine.Content.Delete(this);
+    private void EnableMembers(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
 
-        Unload(engine);
+        foreach (var property in GetType().GetProperties())
+        {
+            if (property.GetCustomAttribute<MemberAttribute>() is var attribute)
+            {
+                if (attribute is not null)
+                {
+                    (property.GetValue(this) as IEnumerable<Entity>)?.ForEach(entity => entity.Enable(engine));
+                }
+            }
+        }
     }
 
     public Entity? FindMember(string keyword, int index = 0)
     {
-        return keyword.IsNullOrEmpty() ? default : FindMember(keyword, ref index);
+        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
     }
 
-    public void Load(GameEngine engine, Entity? parent)
+    /// <summary>
+    /// Enables entity within the engine
+    /// </summary>
+    public void Disable(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
-        if (IsLoaded is true)
+        if (IsEnabled == false)
         {
             throw new InvalidOperationException();
         }
 
+        engine.Content.Disable(this);
+
+        DisableMembers(engine);
+
+        IsEnabled = true;
+    }
+
+    /// <summary>
+    /// Enables entity within the engine
+    /// </summary>
+    public void Enable(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        if (IsEnabled == true)
+        {
+            throw new InvalidOperationException();
+        }
+
+        engine.Content.Enable(this);
+
+        EnableMembers(engine);
+
+        IsEnabled = true;
+    }
+
+    /// <summary>
+    /// Loads new entity into the engine as disabled
+    /// </summary>
+    public void Load(GameEngine engine, Entity? parent = null)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        if (IsLoaded == true)
+        {
+            throw new InvalidOperationException();
+        }
+
+        _entities.Values.ForEach(x => x.Load(engine));
+
         engine.Content.Register(this);
 
         parent?.Register(this);
-
-        if (_entities.IsEmpty is false)
-        {
-            foreach (var entity in _entities.Values)
-            {
-                entity.Load(engine, null);
-            }
-        }
-        else
-        {
-            LoadMembers(engine);
-        }
 
         IsLoaded = true;
     }
@@ -126,39 +153,25 @@ public abstract class Entity
         throw new ArgumentException($"Unable to register entity: {entity}");
     }
 
-    public void Save(GameEngine engine, bool cascade)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        if (cascade is true)
-        {
-            Parallel.ForEach(_entities.Values, entity =>
-            {
-                entity.Save(engine, true);
-            });
-        }
-
-        engine.Content.Save(this);
-
-        IsLoaded = true;
-    }
-
+    /// <summary>
+    /// Unloads existing entity from the engine as disabled
+    /// </summary>
     public void Unload(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
-        if (IsLoaded is false)
+        if (IsLoaded == false)
         {
             throw new InvalidOperationException();
         }
+
+        _entities.Values.ForEach(x => x.Unload(engine));
 
         engine.Content.Unregister(this);
 
         Parent?.Unregister(this);
 
         IsLoaded = false;
-
-        Client = null;
     }
 
     public virtual void Unregister(Entity entity)

@@ -1,26 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using Genesis.Core.Content;
+﻿using Genesis.Core.Content;
+using Genesis.Core.Entities.Attributes;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Actor))]
 public sealed class Actor : Entity
 {
     public Actor(string name) : base(name)
     {
     }
 
-    [NotMapped]
+    [Member]
     public ICollection<Item> Items
     {
         get => [.. _entities.Values.OfType<Item>()];
         init => value.ForEach(Register);
-    }
-
-    protected override void LoadMembers(GameEngine engine)
-    {
-        var items = engine.Content.Query<Item>(x => x.ParentId == EntityId);
-        Parallel.ForEach(items, item => item.Load(engine, this));
     }
 
     public override void Register(Entity entity)
@@ -29,7 +22,7 @@ public sealed class Actor : Entity
 
         if (entity is Item item)
         {
-            if (_entities.TryAdd(item.EntityId, item) is true)
+            if (_entities.TryAdd(item.EntityId, item) == true)
             {
                 item.Parent?.Unregister(item);
                 item.Parent = this;
@@ -46,7 +39,7 @@ public sealed class Actor : Entity
 
         if (entity is Item item)
         {
-            if (_entities.TryRemove(item.EntityId, out var _) is true)
+            if (_entities.TryRemove(item.EntityId, out var _) == true)
             {
                 item.Parent = null;
                 return;

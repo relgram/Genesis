@@ -58,7 +58,7 @@ public sealed class Manager
 
         _logger.LogInformation("Register client: {address}", client.Address);
 
-        if (_clients.TryAdd(client.ClientId, client) is false)
+        if (_clients.TryAdd(client.ClientId, client) == false)
         {
             throw new ArgumentException($"Failed to register client: {client.Address}");
         }
@@ -93,7 +93,7 @@ public sealed class Manager
 
         _logger.LogInformation("Unregister client: {address}", client.Address);
 
-        if (_clients.TryRemove(client.ClientId, out var _) is false)
+        if (_clients.TryRemove(client.ClientId, out var _) == false)
         {
             throw new ArgumentException($"Failed to unregister client: {client.Address}");
         }

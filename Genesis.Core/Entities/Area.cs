@@ -1,26 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using Genesis.Core.Content;
+﻿using Genesis.Core.Content;
+using Genesis.Core.Entities.Attributes;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Area))]
 public sealed class Area : Entity
 {
     public Area(string name) : base(name)
     {
     }
 
-    [NotMapped]
+    [Member]
     public ICollection<Room> Rooms
     {
         get => [.. _entities.Values.OfType<Room>()];
         init => value.ForEach(Register);
-    }
-
-    protected override void LoadMembers(GameEngine engine)
-    {
-        var rooms = engine.Content.Query<Room>(x => x.ParentId == EntityId);
-        Parallel.ForEach(rooms, room => room.Load(engine, this));
     }
 
     public override void Register(Entity entity)
@@ -29,7 +22,7 @@ public sealed class Area : Entity
 
         if (entity is Room room)
         {
-            if (_entities.TryAdd(room.EntityId, room) is true)
+            if (_entities.TryAdd(room.EntityId, room) == true)
             {
                 room.Parent?.Unregister(room);
                 room.Parent = this;
@@ -46,7 +39,7 @@ public sealed class Area : Entity
 
         if (entity is Room room)
         {
-            if (_entities.TryRemove(room.EntityId, out var _) is true)
+            if (_entities.TryRemove(room.EntityId, out var _) == true)
             {
                 room.Parent = null;
                 return;

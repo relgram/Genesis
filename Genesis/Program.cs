@@ -1,4 +1,5 @@
-﻿using Genesis.Core;
+﻿using System.Runtime;
+using Genesis.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,11 @@ internal class Program
 {
     public static void Main(string[] args)
     {
+        if (GCSettings.IsServerGC == false)
+        {
+            throw new Exception("Server Garbage Collection Disabled");
+        }
+
         var builder = Host.CreateDefaultBuilder(args);
 
         builder.ConfigureLogging(configure =>

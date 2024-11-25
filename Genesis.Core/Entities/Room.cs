@@ -1,44 +1,30 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Principal;
+﻿using System.Text.Json.Serialization;
 using Genesis.Core.Content;
+using Genesis.Core.Entities.Attributes;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Room))]
 public sealed class Room : Entity
 {
     public Room(string name) : base(name)
     {
     }
 
-    [NotMapped]
-    public ICollection<Actor> Actors
-    {
-        get => [.. _entities.Values.OfType<Actor>()];
-        init => value.ForEach(Register);
-    }
-
-    [NotMapped]
-    public ICollection<Effect> Effects
-    {
-        get => [.. _entities.Values.OfType<Effect>()];
-        init => value.ForEach(Register);
-    }
-
-    [NotMapped]
+    [Member]
     public ICollection<Item> Items
     {
         get => [.. _entities.Values.OfType<Item>()];
         init => value.ForEach(Register);
     }
 
-    [NotMapped]
+    [JsonInclude]
     public ICollection<Player> Players
     {
         get => [.. _entities.Values.OfType<Player>()];
+        private init => value.ForEach(Register);
     }
 
-    [NotMapped]
+    [Member]
     public ICollection<Portal> Portals
     {
         get => [.. _entities.Values.OfType<Portal>()];
@@ -49,25 +35,13 @@ public sealed class Room : Entity
     {
         static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
 
-        if (Portals.Find(x => IsMatch(x.Name, keyword), ref index) is Portal portal) return portal;
+        if (Portals.Where(x => x.IsEnabled).Find(x => IsMatch(x.Name, keyword), ref index) is Portal portal) return portal;
 
-        if (Players.Find(x => IsMatch(x.Name, keyword), ref index) is Player player) return player;
+        if (Players.Where(x => x.IsEnabled).Find(x => IsMatch(x.Name, keyword), ref index) is Player player) return player;
 
-        if (Items.Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
+        if (Items.Where(x => x.IsEnabled).Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
 
         return base.FindMember(keyword, ref index);
-    }
-
-    protected override void LoadMembers(GameEngine engine)
-    {
-        var actors = engine.Content.Query<Actor>(x => x.ParentId == EntityId);
-        Parallel.ForEach(actors, actor => actor.Load(engine, this));
-
-        var items = engine.Content.Query<Item>(x => x.ParentId == EntityId);
-        Parallel.ForEach(items, item => item.Load(engine, this));
-
-        var portals = engine.Content.Query<Portal>(x => x.ParentId == EntityId);
-        Parallel.ForEach(portals, portal => portal.Load(engine, this));
     }
 
     public override void Register(Entity entity)
@@ -76,7 +50,7 @@ public sealed class Room : Entity
 
         if (entity is Actor actor)
         {
-            if (_entities.TryAdd(actor.EntityId, actor) is true)
+            if (_entities.TryAdd(actor.EntityId, actor) == true)
             {
                 actor.Parent?.Unregister(actor);
                 actor.Parent = this;
@@ -86,7 +60,7 @@ public sealed class Room : Entity
 
         if (entity is Item item)
         {
-            if (_entities.TryAdd(item.EntityId, item) is true)
+            if (_entities.TryAdd(item.EntityId, item) == true)
             {
                 item.Parent?.Unregister(item);
                 item.Parent = this;
@@ -96,7 +70,7 @@ public sealed class Room : Entity
 
         if (entity is Player player)
         {
-            if (_entities.TryAdd(player.EntityId, player) is true)
+            if (_entities.TryAdd(player.EntityId, player) == true)
             {
                 player.Parent?.Unregister(player);
                 player.Parent = this;
@@ -106,7 +80,7 @@ public sealed class Room : Entity
 
         if (entity is Portal portal)
         {
-            if (_entities.TryAdd(portal.EntityId, portal) is true)
+            if (_entities.TryAdd(portal.EntityId, portal) == true)
             {
                 portal.Parent?.Unregister(portal);
                 portal.Parent = this;
@@ -123,7 +97,7 @@ public sealed class Room : Entity
 
         if (entity is Actor actor)
         {
-            if (_entities.TryRemove(actor.EntityId, out var _) is true)
+            if (_entities.TryRemove(actor.EntityId, out var _) == true)
             {
                 actor.Parent = null;
                 return;
@@ -132,7 +106,7 @@ public sealed class Room : Entity
 
         if (entity is Item item)
         {
-            if (_entities.TryRemove(item.EntityId, out var _) is true)
+            if (_entities.TryRemove(item.EntityId, out var _) == true)
             {
                 item.Parent = null;
                 return;
@@ -141,7 +115,7 @@ public sealed class Room : Entity
 
         if (entity is Player player)
         {
-            if (_entities.TryRemove(player.EntityId, out var _) is true)
+            if (_entities.TryRemove(player.EntityId, out var _) == true)
             {
                 player.Parent = null;
                 return;
@@ -150,7 +124,7 @@ public sealed class Room : Entity
 
         if (entity is Portal portal)
         {
-            if (_entities.TryRemove(portal.EntityId, out var _) is true)
+            if (_entities.TryRemove(portal.EntityId, out var _) == true)
             {
                 portal.Parent = null;
                 return;

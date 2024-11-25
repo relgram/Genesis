@@ -1,20 +1,12 @@
-﻿using System.Text.Json.Serialization;
-using Genesis.Core.Content;
+﻿using Genesis.Core.Content;
 using Genesis.Core.Entities.Attributes;
 
 namespace Genesis.Core.Entities;
 
-public sealed class Item : Entity
+public sealed class Locker : Entity
 {
-    public Item(string name) : base(name)
+    public Locker(string name) : base(name)
     {
-    }
-
-    [Member]
-    public ICollection<Effect> Effects
-    {
-        get => [.. _entities.Values.OfType<Effect>()];
-        init => value.ForEach(Register);
     }
 
     [Member]
@@ -37,16 +29,6 @@ public sealed class Item : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (entity is Effect effect)
-        {
-            if (_entities.TryAdd(effect.EntityId, effect) == true)
-            {
-                effect.Parent?.Unregister(effect);
-                effect.Parent = this;
-                return;
-            }
-        }
-
         if (entity is Item item)
         {
             if (_entities.TryAdd(item.EntityId, item) == true)
@@ -63,15 +45,6 @@ public sealed class Item : Entity
     public override void Unregister(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-
-        if (entity is Effect effect)
-        {
-            if (_entities.TryRemove(effect.EntityId, out var _) == true)
-            {
-                effect.Parent = null;
-                return;
-            }
-        }
 
         if (entity is Item item)
         {

@@ -1,23 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Text.Json.Serialization;
 using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Player))]
 public sealed class Player : Entity
 {
     public Player(string name) : base(name)
     {
     }
 
-    [NotMapped]
+    [JsonIgnore]
     public ICollection<Effect> Effects
     {
         get => [.. _entities.Values.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
-    [NotMapped]
+    [JsonIgnore]
     public ICollection<Item> Items
     {
         get => [.. _entities.Values.OfType<Item>()];
@@ -28,18 +27,9 @@ public sealed class Player : Entity
     {
         static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
 
-        if (Items.Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
+        if (Items.Where(x => x.IsEnabled).Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
 
         return base.FindMember(keyword, ref index);
-    }
-
-    protected override void LoadMembers(GameEngine engine)
-    {
-        var effects = engine.Content.Query<Effect>(x => x.ParentId == EntityId);
-        Parallel.ForEach(effects, effect => effect.Load(engine, this));
-
-        var items = engine.Content.Query<Item>(x => x.ParentId == EntityId);
-        Parallel.ForEach(items, item => item.Load(engine, this));
     }
 
     public void Disconnect(GameEngine engine, string message = "Disconnected")
@@ -53,7 +43,7 @@ public sealed class Player : Entity
 
         if (entity is Effect effect)
         {
-            if (_entities.TryAdd(effect.EntityId, effect) is true)
+            if (_entities.TryAdd(effect.EntityId, effect) == true)
             {
                 effect.Parent?.Unregister(effect);
                 effect.Parent = this;
@@ -63,7 +53,7 @@ public sealed class Player : Entity
 
         if (entity is Item item)
         {
-            if (_entities.TryAdd(item.EntityId, item) is true)
+            if (_entities.TryAdd(item.EntityId, item) == true)
             {
                 item.Parent?.Unregister(item);
                 item.Parent = this;
@@ -85,7 +75,7 @@ public sealed class Player : Entity
 
         if (entity is Effect effect)
         {
-            if (_entities.TryRemove(effect.EntityId, out var _) is true)
+            if (_entities.TryRemove(effect.EntityId, out var _) == true)
             {
                 effect.Parent = null;
                 return;
@@ -94,7 +84,7 @@ public sealed class Player : Entity
 
         if (entity is Item item)
         {
-            if (_entities.TryRemove(item.EntityId, out var _) is true)
+            if (_entities.TryRemove(item.EntityId, out var _) == true)
             {
                 item.Parent = null;
                 return;

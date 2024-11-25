@@ -50,9 +50,9 @@ public sealed class Client
 
         try
         {
-            if (string.IsNullOrWhiteSpace(message) is false)
+            if (string.IsNullOrWhiteSpace(message) == false)
             {
-                if (string.IsNullOrWhiteSpace(Procedure) is true)
+                if (string.IsNullOrWhiteSpace(Procedure) == true)
                 {
                     if (Player is not null)
                     {
@@ -129,11 +129,16 @@ public sealed class Client
     {
         try
         {
-            SendBytes(Encoding.UTF8.GetBytes($"<color red>{message}</color>"));
+            if (Player is not null)
+            {
+                engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", Player);
+            }
 
-            Player?.Save(engine, cascade: true);
+            message = $"<color red>{message}</color>";
 
-            Player?.Unload(engine);
+            SendBytes(message.ToBytes());
+
+            Player?.Disable(engine);
         }
         catch (Exception ex)
         {

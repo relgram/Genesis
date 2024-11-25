@@ -1,28 +1,24 @@
 ﻿using System.Collections.Concurrent;
-using System.Linq.Expressions;
-using Genesis.Core.Content.Database;
+using System.Text.Json;
 using Genesis.Core.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Content;
 
 public sealed class Manager
 {
-    private const string CONNECTION_STRING = @"Server=(local);Database=Shadowlance;TrustServerCertificate=true;Trusted_Connection=True;";
-    private const string DELETE_SQL_FORMAT = "DELETE FROM {0} where EntityId = @p0";
+    private static readonly JsonSerializerOptions JSON_OPTIONS = new() { WriteIndented = true };
 
-    private readonly PooledDbContextFactory<EntityContext> _contextFactory;
+    private readonly string _contentPath;
     private readonly Dictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = [];
     private readonly ILogger<Manager> _logger;
     private readonly UpdateTimer[] _updateTimers = new UpdateTimer[1000];
 
-    public Manager(ILogger<Manager> logger)
+    public Manager(ILogger<Manager> logger, IConfiguration configuration)
     {
-        var builder = new DbContextOptionsBuilder<EntityContext>().UseSqlServer(CONNECTION_STRING);
-        _contextFactory = new PooledDbContextFactory<EntityContext>(builder.Options);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _contentPath = configuration["Genesis:ContentPath"] ?? throw new Exception("ContentPath not defined");
 
         foreach (var type in typeof(Entity).Assembly.GetTypes().Where(x => x.IsAbstract is false))
         {
@@ -34,55 +30,54 @@ public sealed class Manager
     }
 
     /// <summary>
-    /// Delete entity from database
+    /// Disable updates on registered entity
     /// </summary>
-    internal void Delete<T>(T entity) where T : Entity
+    internal void Disable(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(nameof(entity));
 
-        _logger.LogInformation("Deleting: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
+        _logger.LogInformation("Disable [{type}]: {entityId}", entity.GetType().Name, entity.EntityId);
 
-        var type = entity.GetType().Name;
-
-        using var context = _contextFactory.CreateDbContext();
-
-        var sql = string.Format("DELETE FROM {0} WHERE EntityId = @p0", type);
-
-        context.Database.ExecuteSqlRawAsync(sql, entity.EntityId).FireAndForget(ex =>
+        if (_entities[entity.GetType()].ContainsKey(entity.EntityId) == true)
         {
-            _logger.LogWarning("Failed to delete {type}: {entityId}", type, entity.EntityId);
-        });
+            _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Unregister(entity);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Failed to disable [{entity.GetType().Name}]: {entity.EntityId}");
+        }
     }
 
     /// <summary>
-    /// Registers entity with manager and assigns to update timer
+    /// Enables updates on registered entity
+    /// </summary>
+    internal void Enable(Entity entity)
+    {
+        ArgumentNullException.ThrowIfNull(nameof(entity));
+
+        _logger.LogInformation("Enable [{type}]: {entityId}", entity.GetType().Name, entity.EntityId);
+
+        if (_entities[entity.GetType()].ContainsKey(entity.EntityId) == true)
+        {
+            _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Register(entity);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Failed to enable [{entity.GetType().Name}]: {entity.EntityId}");
+        }
+    }
+
+    /// <summary>
+    /// Registers entity with manager
     /// </summary>
     internal void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Register {type}: {entityId}", entity.GetType().Name, entity.EntityId);
-
-        if (_entities[entity.GetType()].TryAdd(entity.EntityId, entity) is true)
+        if (_entities[entity.GetType()].TryAdd(entity.EntityId, entity) == false)
         {
-            var index = (uint)entity.GetHashCode() % _updateTimers.Length;
-
-            _updateTimers[index].Register(entity);
+            throw new InvalidOperationException($"Failed to register [{entity.GetType().Name}]: {entity.EntityId}");
         }
-    }
-
-    /// <summary>
-    /// Save entity to database
-    /// </summary>
-    internal void Save(Entity entity)
-    {
-        ArgumentNullException.ThrowIfNull(nameof(entity));
-
-        _logger.LogInformation("Saving: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
-
-        using var context = _contextFactory.CreateDbContext();
-
-        context.Upsert(entity).Run();
     }
 
     internal void Start(GameEngine engine, CancellationToken cancellationToken)
@@ -90,9 +85,17 @@ public sealed class Manager
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
 
-        Enumerable.Range(0, _updateTimers.Length).ForEach(index => _updateTimers[index] = new(engine));
+        Enumerable.Range(0, _updateTimers.Length).ForEach(x => _updateTimers[x] = new(engine));
 
-        Parallel.ForEach(Query<Zone>(x => true), zone => zone.Load(engine, null));
+        if (!File.Exists(_contentPath))
+        {
+            File.WriteAllText(_contentPath, "[]");
+        }
+
+        using var stream = File.OpenRead(_contentPath);
+        JsonSerializer.Deserialize<Zone[]>(stream)?.ForEach(x => x.Load(engine));
+        _entities[typeof(Zone)].Values.Cast<Zone>().ForEach(zone => zone.Enable(engine));
+        _logger.LogInformation("Loaded {count} entities", _entities.Sum(list => list.Value.Count));
     }
 
     internal void Stop(GameEngine engine, CancellationToken cancellationToken)
@@ -100,9 +103,10 @@ public sealed class Manager
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
 
-        Enumerable.Range(0, _updateTimers.Length).ForEach(index => _updateTimers[index].Dispose());
-
-        Parallel.ForEach(Find<Zone>(x => true), zone => zone.Save(engine, true));
+        _updateTimers.ForEach(x => x.Dispose());
+        Find<Zone>(x => true).ForEach(x => x.Disable(engine));
+        using var stream = File.Open(_contentPath, FileMode.Create);
+        JsonSerializer.Serialize(stream, Find<Zone>(x => true), JSON_OPTIONS);
     }
 
     /// <summary>
@@ -112,13 +116,9 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Unregister {type}: {entityId}", entity.GetType().Name, entity.EntityId);
-
-        if (_entities[entity.GetType()].TryRemove(entity.EntityId, out var _) is true)
+        if (_entities[entity.GetType()].TryRemove(entity.EntityId) == false)
         {
-            var index = (uint)entity.GetHashCode() % _updateTimers.Length;
-
-            _updateTimers[index].Unregister(entity);
+            throw new InvalidOperationException($"Failed to unregister [{entity.GetType().Name}]: {entity.EntityId}");
         }
     }
 
@@ -136,14 +136,5 @@ public sealed class Manager
     public T? Get<T>(Guid entityId) where T : Entity
     {
         return _entities[typeof(T)].GetValueOrDefault(entityId) as T;
-    }
-
-    /// <summary>
-    /// Returns array of all database entities of type T matching provided predicate
-    /// </summary>
-    public T[] Query<T>(Expression<Func<T, bool>> predicate) where T : Entity
-    {
-        using var context = _contextFactory.CreateDbContext();
-        return [.. context.Set<T>().AsNoTracking().Where(predicate)];
     }
 }

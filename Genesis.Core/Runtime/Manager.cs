@@ -160,18 +160,18 @@ public sealed class Manager
 
                 foreach (var type in assembly.GetTypes().Where(x => x.IsAbstract == false))
                 {
-                    if (type.IsAssignableTo(typeof(Action)) is true)
+                    if (type.IsAssignableTo(typeof(Action)) == true)
                     {
                         if (Activator.CreateInstance(type) is Action action)
                         {
-                            if (_actions.TryAdd(action.Name, action) is false)
+                            if (_actions.TryAdd(action.Name, action) == false)
                             {
                                 _logger.LogWarning("Duplicate action found: {action}", action.Name);
                             }
 
                             if (action.Alias is not null)
                             {
-                                if (_actions.TryAdd(action.Alias, action) is false)
+                                if (_actions.TryAdd(action.Alias, action) == false)
                                 {
                                     _logger.LogWarning("Duplicate action found: {action}", action.Alias);
                                 }
@@ -179,11 +179,11 @@ public sealed class Manager
                         }
                     }
 
-                    if (type.IsAssignableTo(typeof(Procedure)) is true)
+                    if (type.IsAssignableTo(typeof(Procedure)) == true)
                     {
                         if (Activator.CreateInstance(type) is Procedure procedure)
                         {
-                            if (_procedures.TryAdd(procedure.Name, procedure) is false)
+                            if (_procedures.TryAdd(procedure.Name, procedure) == false)
                             {
                                 _logger.LogWarning("Duplicate procedure found: {procedure}", procedure.Name);
                             }
