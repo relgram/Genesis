@@ -21,7 +21,7 @@ public sealed class Room : Entity
     public ICollection<Player> Players
     {
         get => [.. _entities.Values.OfType<Player>()];
-        private init => value.ForEach(Register);
+        internal init => value.ForEach(Register);
     }
 
     [Member]

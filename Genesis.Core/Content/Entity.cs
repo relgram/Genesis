@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using Genesis.Core.Entities.Attributes;
 using Genesis.Core.Network;
+using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Content;
 
@@ -25,9 +26,6 @@ public abstract class Entity
     [JsonIgnore]
     internal bool IsEnabled { get; private set; }
 
-    [JsonIgnore]
-    internal bool IsLoaded { get; private set; }
-
     public string Name { get; set; } = string.Empty;
 
     [JsonIgnore]
@@ -43,8 +41,6 @@ public abstract class Entity
         internal get => _properties.ToDictionary(x => x.Key, x => x.Value);
         init => value.ForEach(x => _properties[x.Key] = x.Value);
     }
-
-    protected virtual Entity? FindMember(string keyword, ref int index) => null;
 
     public Dynamic this[string key]
     {
@@ -84,10 +80,7 @@ public abstract class Entity
         }
     }
 
-    public Entity? FindMember(string keyword, int index = 0)
-    {
-        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
-    }
+    protected virtual Entity? FindMember(string keyword, ref int index) => null;
 
     /// <summary>
     /// Enables entity within the engine
@@ -96,16 +89,11 @@ public abstract class Entity
     {
         ArgumentNullException.ThrowIfNull(engine);
 
-        if (IsEnabled == false)
-        {
-            throw new InvalidOperationException();
-        }
-
         engine.Content.Disable(this);
 
         DisableMembers(engine);
 
-        IsEnabled = true;
+        IsEnabled = false;
     }
 
     /// <summary>
@@ -115,11 +103,6 @@ public abstract class Entity
     {
         ArgumentNullException.ThrowIfNull(engine);
 
-        if (IsEnabled == true)
-        {
-            throw new InvalidOperationException();
-        }
-
         engine.Content.Enable(this);
 
         EnableMembers(engine);
@@ -127,25 +110,21 @@ public abstract class Entity
         IsEnabled = true;
     }
 
+    public Entity? FindMember(string keyword, int index = 0)
+    {
+        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
+    }
+
     /// <summary>
-    /// Loads new entity into the engine as disabled
+    /// Loads new entity into game engine
     /// </summary>
-    public void Load(GameEngine engine, Entity? parent = null)
+    public void Load(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
-
-        if (IsLoaded == true)
-        {
-            throw new InvalidOperationException();
-        }
 
         _entities.Values.ForEach(x => x.Load(engine));
 
         engine.Content.Register(this);
-
-        parent?.Register(this);
-
-        IsLoaded = true;
     }
 
     public virtual void Register(Entity entity)
@@ -154,24 +133,15 @@ public abstract class Entity
     }
 
     /// <summary>
-    /// Unloads existing entity from the engine as disabled
+    /// Unloads existing entity from game engine
     /// </summary>
     public void Unload(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
-        if (IsLoaded == false)
-        {
-            throw new InvalidOperationException();
-        }
-
         _entities.Values.ForEach(x => x.Unload(engine));
 
         engine.Content.Unregister(this);
-
-        Parent?.Unregister(this);
-
-        IsLoaded = false;
     }
 
     public virtual void Unregister(Entity entity)

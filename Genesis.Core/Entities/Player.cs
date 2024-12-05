@@ -1,5 +1,5 @@
-﻿using System.Text.Json.Serialization;
-using Genesis.Core.Content;
+﻿using Genesis.Core.Content;
+using Genesis.Core.Entities.Attributes;
 
 namespace Genesis.Core.Entities;
 
@@ -9,14 +9,14 @@ public sealed class Player : Entity
     {
     }
 
-    [JsonIgnore]
+    [Member]
     public ICollection<Effect> Effects
     {
         get => [.. _entities.Values.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
-    [JsonIgnore]
+    [Member]
     public ICollection<Item> Items
     {
         get => [.. _entities.Values.OfType<Item>()];

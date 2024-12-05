@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.Json;
+using Genesis.Core.Content.Serialization;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -8,17 +10,19 @@ namespace Genesis.Core.Content;
 
 public sealed class Manager
 {
-    private static readonly JsonSerializerOptions JSON_OPTIONS = new() { WriteIndented = true };
-
     private readonly string _contentPath;
     private readonly Dictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = [];
     private readonly ILogger<Manager> _logger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly Timer _saveTimer;
     private readonly UpdateTimer[] _updateTimers = new UpdateTimer[1000];
 
-    public Manager(ILogger<Manager> logger, IConfiguration configuration)
+    public Manager(ILogger<Manager> logger, ILoggerFactory loggerFactory, IConfiguration configuration)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _contentPath = configuration["Genesis:ContentPath"] ?? throw new Exception("ContentPath not defined");
+        _saveTimer = new(SaveCallback, null, Timeout.Infinite, Timeout.Infinite);
 
         foreach (var type in typeof(Entity).Assembly.GetTypes().Where(x => x.IsAbstract is false))
         {
@@ -29,22 +33,29 @@ public sealed class Manager
         }
     }
 
+    private void SaveCallback(object? state)
+    {
+        var timer = Stopwatch.StartNew();
+        var zones = Find<Zone>(x => x is not null);
+        using var stream = File.Open(_contentPath, FileMode.Create);
+        JsonSerializer.Serialize(stream, zones, EntityContext.Default.ZoneArray);
+        _logger.LogInformation("Saved entities in {duration}ms", timer.ElapsedMilliseconds);
+        Process.Start(new ProcessStartInfo("git.exe", "commit -a -m \"Update Content.json\"")
+        {
+            WorkingDirectory = Path.GetDirectoryName(_contentPath)
+        });
+    }
+
     /// <summary>
     /// Disable updates on registered entity
     /// </summary>
     internal void Disable(Entity entity)
     {
-        ArgumentNullException.ThrowIfNull(nameof(entity));
-
-        _logger.LogInformation("Disable [{type}]: {entityId}", entity.GetType().Name, entity.EntityId);
+        ArgumentNullException.ThrowIfNull(entity);
 
         if (_entities[entity.GetType()].ContainsKey(entity.EntityId) == true)
         {
             _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Unregister(entity);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Failed to disable [{entity.GetType().Name}]: {entity.EntityId}");
         }
     }
 
@@ -53,17 +64,11 @@ public sealed class Manager
     /// </summary>
     internal void Enable(Entity entity)
     {
-        ArgumentNullException.ThrowIfNull(nameof(entity));
-
-        _logger.LogInformation("Enable [{type}]: {entityId}", entity.GetType().Name, entity.EntityId);
+        ArgumentNullException.ThrowIfNull(entity);
 
         if (_entities[entity.GetType()].ContainsKey(entity.EntityId) == true)
         {
             _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Register(entity);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Failed to enable [{entity.GetType().Name}]: {entity.EntityId}");
         }
     }
 
@@ -76,7 +81,7 @@ public sealed class Manager
 
         if (_entities[entity.GetType()].TryAdd(entity.EntityId, entity) == false)
         {
-            throw new InvalidOperationException($"Failed to register [{entity.GetType().Name}]: {entity.EntityId}");
+            _logger.LogWarning("Failed to register [{type}]: {entityId}", entity.GetType().Name, entity.EntityId);
         }
     }
 
@@ -85,17 +90,19 @@ public sealed class Manager
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
 
-        Enumerable.Range(0, _updateTimers.Length).ForEach(x => _updateTimers[x] = new(engine));
-
-        if (!File.Exists(_contentPath))
+        for (int i = 0; i < _updateTimers.Length; ++i)
         {
-            File.WriteAllText(_contentPath, "[]");
+            var logger = _loggerFactory.CreateLogger<UpdateTimer>();
+            _updateTimers[i] = new(logger, engine);
         }
 
-        using var stream = File.OpenRead(_contentPath);
-        JsonSerializer.Deserialize<Zone[]>(stream)?.ForEach(x => x.Load(engine));
+        var timer = Stopwatch.StartNew();
+        var context = EntityContext.Default.ZoneArray;
+        using var stream = File.Open(_contentPath, FileMode.Open);
+        JsonSerializer.Deserialize(stream, context)?.ForEach(x => x.Load(engine));
         _entities[typeof(Zone)].Values.Cast<Zone>().ForEach(zone => zone.Enable(engine));
         _logger.LogInformation("Loaded {count} entities", _entities.Sum(list => list.Value.Count));
+        _saveTimer.Change(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
     }
 
     internal void Stop(GameEngine engine, CancellationToken cancellationToken)
@@ -104,9 +111,18 @@ public sealed class Manager
         cancellationToken.ThrowIfCancellationRequested();
 
         _updateTimers.ForEach(x => x.Dispose());
-        Find<Zone>(x => true).ForEach(x => x.Disable(engine));
+        _saveTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        Find<Zone>(zone => zone.IsEnabled).ForEach(zone => zone.Disable(engine));
+
+        var timer = Stopwatch.StartNew();
+        var zones = Find<Zone>(x => x is not null);
         using var stream = File.Open(_contentPath, FileMode.Create);
-        JsonSerializer.Serialize(stream, Find<Zone>(x => true), JSON_OPTIONS);
+        JsonSerializer.Serialize(stream, zones, EntityContext.Default.ZoneArray);
+        _logger.LogInformation("Saved entities in {duration}ms", timer.ElapsedMilliseconds);
+        Process.Start(new ProcessStartInfo("git.exe", "commit -a -m \"Update Content.json\"")
+        {
+            WorkingDirectory = Path.GetDirectoryName(_contentPath)
+        });
     }
 
     /// <summary>
@@ -118,7 +134,7 @@ public sealed class Manager
 
         if (_entities[entity.GetType()].TryRemove(entity.EntityId) == false)
         {
-            throw new InvalidOperationException($"Failed to unregister [{entity.GetType().Name}]: {entity.EntityId}");
+            _logger.LogWarning("Failed to unregister [{type}]: {entityId}", entity.GetType().Name, entity.EntityId);
         }
     }
 
