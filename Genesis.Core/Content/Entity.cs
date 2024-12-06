@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using Genesis.Core.Entities.Attributes;
 using Genesis.Core.Network;
-using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Content;
 
@@ -24,7 +23,7 @@ public abstract class Entity
     public Guid EntityId { get; init; } = Guid.NewGuid();
 
     [JsonIgnore]
-    internal bool IsEnabled { get; private set; }
+    public bool IsEnabled { get; private set; }
 
     public string Name { get; set; } = string.Empty;
 
@@ -83,6 +82,22 @@ public abstract class Entity
     protected virtual Entity? FindMember(string keyword, ref int index) => null;
 
     /// <summary>
+    /// Unloads existing entity from game engine
+    /// </summary>
+    public void Destroy(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        _entities.Values.ForEach(x => x.Destroy(engine));
+
+        Parent?.Unregister(this);
+
+        engine.Content.Disable(this);
+
+        engine.Content.Unregister(this);
+    }
+
+    /// <summary>
     /// Enables entity within the engine
     /// </summary>
     public void Disable(GameEngine engine)
@@ -118,30 +133,25 @@ public abstract class Entity
     /// <summary>
     /// Loads new entity into game engine
     /// </summary>
-    public void Load(GameEngine engine)
+    public void Load(GameEngine engine, Entity? parent = null, bool enable = false)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
         _entities.Values.ForEach(x => x.Load(engine));
 
         engine.Content.Register(this);
+
+        parent?.Register(this);
+
+        if (enable)
+        {
+            Enable(engine);
+        }
     }
 
     public virtual void Register(Entity entity)
     {
         throw new ArgumentException($"Unable to register entity: {entity}");
-    }
-
-    /// <summary>
-    /// Unloads existing entity from game engine
-    /// </summary>
-    public void Unload(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        _entities.Values.ForEach(x => x.Unload(engine));
-
-        engine.Content.Unregister(this);
     }
 
     public virtual void Unregister(Entity entity)
