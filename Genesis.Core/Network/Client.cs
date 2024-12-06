@@ -175,7 +175,7 @@ public sealed class Client
         ArgumentNullException.ThrowIfNull(player);
 
         Procedure = string.Empty;
-        Player?.Unload(engine);
+        Player?.Disable(engine);
         player.Client = this;
         Player = player;
     }
