@@ -1,16 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq.Expressions;
+﻿using System.Text.Json.Serialization;
 using Genesis.Core.Content;
-using Genesis.Core.Content.Database;
 using Genesis.Core.Entities.Attributes;
-using Microsoft.EntityFrameworkCore;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Player))]
-public sealed class Player : Entity
+public sealed class Mortal : Entity
 {
-    public Player(string name) : base(name)
+    [JsonConstructor]
+    public Mortal(string name) : base(name)
     {
     }
 
@@ -32,7 +29,7 @@ public sealed class Player : Entity
     {
         static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
 
-        if (Widgets.Find(x => IsMatch(x.Name, keyword), ref index) is Widget widget) return widget;
+        if (Widgets.Find(x => IsMatch(x.Name, keyword), ref index) is Widget obj) return obj;
 
         return base.FindMember(keyword, ref index);
     }
@@ -62,23 +59,6 @@ public sealed class Player : Entity
         }
 
         base.Register(entity);
-    }
-
-    public void Save(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        engine.Content.Save(this);
-    }
-
-    public static Player[] Search(GameEngine engine, Expression<Func<Player, bool>> predicate)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        return engine.Content.Search(predicate);
-    }
-
-    public void SendBytes(byte[] bytes)
-    {
-        Client?.SendBytes(bytes);
     }
 
     public override void Unregister(Entity entity)

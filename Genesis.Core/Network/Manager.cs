@@ -84,7 +84,10 @@ public sealed class Manager
 
         _tcpListener.Stop();
 
-        _clients.Values.ForEach(x => x.Disconnect(engine, "Server Shutdown"));
+        foreach (var client in _clients.Values)
+        {
+            client.Disconnect(engine, "Server Shutting Down");
+        }
     }
 
     internal void Unregister(Client client)
@@ -93,7 +96,7 @@ public sealed class Manager
 
         _logger.LogInformation("Unregister client: {address}", client.Address);
 
-        if (_clients.TryRemove(client.ClientId, out var _) == false)
+        if (_clients.TryRemove(client.ClientId) == false)
         {
             throw new ArgumentException($"Failed to unregister client: {client.Address}");
         }

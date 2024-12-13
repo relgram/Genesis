@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Content;
 
@@ -7,13 +6,11 @@ internal sealed class UpdateTimer : IDisposable
 {
     private readonly GameEngine _engine;
     private readonly ConcurrentDictionary<Guid, Entity> _entities = [];
-    private readonly object _executeLock = new();
-    private readonly ILogger<UpdateTimer> _logger;
+    private readonly Lock _executeLock = new();
     private readonly Timer _timer;
 
-    public UpdateTimer(ILogger<UpdateTimer> logger, GameEngine engine)
+    public UpdateTimer(GameEngine engine)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
         _timer = new Timer(Elapsed, null, Random.Shared.Next(0, 100), 1_000);
     }
@@ -37,7 +34,7 @@ internal sealed class UpdateTimer : IDisposable
         
         if (_entities.TryAdd(entity.EntityId, entity) == false)
         {
-            _logger.LogWarning("Failed to register [{type}]: {entityId}", entity.GetType().Name, entity.EntityId);
+            throw new Exception($"Failed to register [{entity.GetType().Name}]: {entity.EntityId}");
         }
     }
 
@@ -45,9 +42,9 @@ internal sealed class UpdateTimer : IDisposable
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryRemove(entity.EntityId, out var _) == false)
+        if (_entities.TryRemove(entity.EntityId) == false)
         {
-            _logger.LogWarning("Failed to unregister [{type}]: {entityId}", entity.GetType().Name, entity.EntityId);
+            throw new Exception($"Failed to unregister [{entity.GetType().Name}]: {entity.EntityId}");
         }
     }
 }

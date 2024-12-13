@@ -9,7 +9,7 @@ namespace Genesis.Core.Runtime;
 public sealed class Manager
 {
     private readonly SortedDictionary<string, Action> _actions = new(StringComparer.OrdinalIgnoreCase);
-    private readonly object _internalLock = new();
+    private readonly Lock _internalLock = new();
     private readonly string _libraryPath;
     private readonly ILogger<Manager> _logger;
     private readonly SortedDictionary<string, Procedure> _procedures = new(StringComparer.OrdinalIgnoreCase);

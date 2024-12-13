@@ -138,7 +138,7 @@ public sealed class Client
 
             SendBytes(message.ToBytes());
 
-            Player?.Disable(engine);
+            Player?.Unload(engine);
         }
         catch (Exception ex)
         {
@@ -175,7 +175,6 @@ public sealed class Client
         ArgumentNullException.ThrowIfNull(player);
 
         Procedure = string.Empty;
-        Player?.Disable(engine);
         player.Client = this;
         Player = player;
     }
