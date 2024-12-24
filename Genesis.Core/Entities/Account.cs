@@ -4,22 +4,16 @@ using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Region))]
-public sealed class Region : Entity
+[Table(nameof(Account))]
+public sealed class Account : Entity
 {
-    public Region(string name) : base(name)
+    public Account(string name) : base(name)
     {
     }
 
-    public ICollection<Effect> Effects
+    public ICollection<Player> Players
     {
-        get => [.. _entities.Values.OfType<Effect>()];
-        init => value.ForEach(Register);
-    }
-
-    public ICollection<Room> Rooms
-    {
-        get => [.. _entities.Values.OfType<Room>()];
+        get => [.. _entities.Values.OfType<Player>()];
         init => value.ForEach(Register);
     }
 
@@ -27,12 +21,12 @@ public sealed class Region : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (entity is Effect effect)
+        if (entity is Player player)
         {
-            if (_entities.TryAdd(effect.EntityId, effect) == true)
+            if (_entities.TryAdd(player.EntityId, player) == true)
             {
-                effect.Parent?.Unregister(effect);
-                effect.Parent = this;
+                player.Parent?.Unregister(player);
+                player.Parent = this;
                 return;
             }
         }
@@ -46,7 +40,7 @@ public sealed class Region : Entity
         engine.Content.Save(this);
     }
 
-    public static Room[] Search(GameEngine engine, Expression<Func<Room, bool>> predicate)
+    public static Account[] Search(GameEngine engine, Expression<Func<Account, bool>> predicate)
     {
         ArgumentNullException.ThrowIfNull(engine);
         return engine.Content.Search(predicate);
@@ -56,11 +50,11 @@ public sealed class Region : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (entity is Effect effect)
+        if (entity is Player player)
         {
-            if (_entities.TryRemove(effect.EntityId) == true)
+            if (_entities.TryRemove(player.EntityId) == true)
             {
-                effect.Parent = null;
+                player.Parent = null;
                 return;
             }
         }

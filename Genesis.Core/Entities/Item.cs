@@ -1,27 +1,24 @@
 ﻿using System.Text.Json.Serialization;
 using Genesis.Core.Content;
-using Genesis.Core.Entities.Attributes;
 
 namespace Genesis.Core.Entities;
 
-public sealed class Widget : Entity
+public sealed class Item : Entity
 {
     [JsonConstructor]
-    public Widget(string name) : base(name)
+    public Item(string name) : base(name)
     {
     }
 
-    [Member]
     public ICollection<Effect> Effects
     {
         get => [.. _entities.Values.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
-    [Member]
-    public ICollection<Widget> Widgets
+    public ICollection<Item> Items
     {
-        get => [.. _entities.Values.OfType<Widget>()];
+        get => [.. _entities.Values.OfType<Item>()];
         init => value.ForEach(Register);
     }
 
@@ -29,7 +26,7 @@ public sealed class Widget : Entity
     {
         static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
 
-        if (Widgets.Find(x => IsMatch(x.Name, keyword), ref index) is Widget obj) return obj;
+        if (Items.Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
 
         return base.FindMember(keyword, ref index);
     }
@@ -48,12 +45,12 @@ public sealed class Widget : Entity
             }
         }
 
-        if (entity is Widget widget)
+        if (entity is Item item)
         {
-            if (_entities.TryAdd(widget.EntityId, widget) == true)
+            if (_entities.TryAdd(item.EntityId, item) == true)
             {
-                widget.Parent?.Unregister(widget);
-                widget.Parent = this;
+                item.Parent?.Unregister(item);
+                item.Parent = this;
                 return;
             }
         }
@@ -74,11 +71,11 @@ public sealed class Widget : Entity
             }
         }
 
-        if (entity is Widget widget)
+        if (entity is Item item)
         {
-            if (_entities.TryRemove(widget.EntityId) == true)
+            if (_entities.TryRemove(item.EntityId) == true)
             {
-                widget.Parent = null;
+                item.Parent = null;
                 return;
             }
         }

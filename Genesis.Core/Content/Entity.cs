@@ -1,10 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Reflection;
 using System.Text.Json.Serialization;
 using Genesis.Core.Entities;
-using Genesis.Core.Entities.Attributes;
 using Genesis.Core.Network;
 
 namespace Genesis.Core.Content;
@@ -23,7 +21,7 @@ public abstract class Entity
 
     [NotMapped]
     [JsonIgnore]
-    internal Client? Client { get; set; }
+    public Client? Client { get; internal set; }
 
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid EntityId { get; init; } = Guid.NewGuid();
@@ -52,39 +50,15 @@ public abstract class Entity
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    private void LoadMembers(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        foreach (var property in GetType().GetProperties())
-        {
-            if (property.GetCustomAttribute<MemberAttribute>() is var attribute)
-            {
-                if (attribute is not null)
-                {
-                    (property.GetValue(this) as IEnumerable<Entity>)?.ForEach(engine.Content.Register);
-                }
-            }
-        }
-    }
-
-    private void UnloadMembers(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        foreach (var property in GetType().GetProperties())
-        {
-            if (property.GetCustomAttribute<MemberAttribute>() is var attribute)
-            {
-                if (attribute is not null)
-                {
-                    (property.GetValue(this) as IEnumerable<Entity>)?.ForEach(engine.Content.Unregister);
-                }
-            }
-        }
-    }
-
     protected virtual Entity? FindMember(string keyword, ref int index) => null;
+
+    protected virtual void LoadMembers(GameEngine engine)
+    {
+    }
+
+    protected virtual void UnloadMembers(GameEngine engine)
+    {
+    }
 
     public Entity? FindMember(string keyword, int index = 0)
     {

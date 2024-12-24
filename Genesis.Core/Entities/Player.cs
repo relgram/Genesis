@@ -1,30 +1,24 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq.Expressions;
+﻿using System.Text.Json.Serialization;
 using Genesis.Core.Content;
-using Genesis.Core.Content.Database;
-using Genesis.Core.Entities.Attributes;
-using Microsoft.EntityFrameworkCore;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Player))]
 public sealed class Player : Entity
 {
+    [JsonConstructor]
     public Player(string name) : base(name)
     {
     }
 
-    [Member]
     public ICollection<Effect> Effects
     {
         get => [.. _entities.Values.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
-    [Member]
-    public ICollection<Widget> Widgets
+    public ICollection<Item> Items
     {
-        get => [.. _entities.Values.OfType<Widget>()];
+        get => [.. _entities.Values.OfType<Item>()];
         init => value.ForEach(Register);
     }
 
@@ -32,7 +26,7 @@ public sealed class Player : Entity
     {
         static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
 
-        if (Widgets.Find(x => IsMatch(x.Name, keyword), ref index) is Widget widget) return widget;
+        if (Items.Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
 
         return base.FindMember(keyword, ref index);
     }
@@ -51,34 +45,17 @@ public sealed class Player : Entity
             }
         }
 
-        if (entity is Widget widget)
+        if (entity is Item item)
         {
-            if (_entities.TryAdd(widget.EntityId, widget) == true)
+            if (_entities.TryAdd(item.EntityId, item) == true)
             {
-                widget.Parent?.Unregister(widget);
-                widget.Parent = this;
+                item.Parent?.Unregister(item);
+                item.Parent = this;
                 return;
             }
         }
 
         base.Register(entity);
-    }
-
-    public void Save(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        engine.Content.Save(this);
-    }
-
-    public static Player[] Search(GameEngine engine, Expression<Func<Player, bool>> predicate)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        return engine.Content.Search(predicate);
-    }
-
-    public void SendBytes(byte[] bytes)
-    {
-        Client?.SendBytes(bytes);
     }
 
     public override void Unregister(Entity entity)
@@ -94,11 +71,11 @@ public sealed class Player : Entity
             }
         }
 
-        if (entity is Widget widget)
+        if (entity is Item item)
         {
-            if (_entities.TryRemove(widget.EntityId) == true)
+            if (_entities.TryRemove(item.EntityId) == true)
             {
-                widget.Parent = null;
+                item.Parent = null;
                 return;
             }
         }
