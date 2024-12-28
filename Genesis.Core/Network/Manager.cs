@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using Genesis.Core.Content;
 using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Network;
@@ -13,10 +12,10 @@ public sealed class Manager
     private readonly ILoggerFactory _loggerFactory;
     private readonly TcpListener _tcpListener = new(IPAddress.Any, 4000);
 
-    public Manager(ILogger<Manager> logger, ILoggerFactory loggerFactory)
+    public Manager(ILogger<Manager> logger, ILoggerFactory loggerFmobiley)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _loggerFactory = loggerFmobiley ?? throw new ArgumentNullException(nameof(loggerFmobiley));
     }
 
     private async Task AcceptSocketAsync(GameEngine engine)

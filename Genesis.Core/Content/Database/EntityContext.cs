@@ -11,9 +11,9 @@ internal sealed class EntityContext : DbContext
     {
     }
 
-    public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<Player> Players => Set<Player>();
 
-    public DbSet<Region> Regions => Set<Region>();
+    public DbSet<Region> Rooms => Set<Region>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,22 +23,45 @@ internal sealed class EntityContext : DbContext
             v => JsonSerializer.Deserialize<Dictionary<string, Dynamic>>(v, (JsonSerializerOptions?)null)!
         );
 
-        var PlayersConverter = new ValueConverter<ICollection<Player>, string>
+        var EffectsConverter = new ValueConverter<ICollection<Effect>, string>
         (
             v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-            v => JsonSerializer.Deserialize<ICollection<Player>>(v, (JsonSerializerOptions?)null)!
+            v => JsonSerializer.Deserialize<ICollection<Effect>>(v, (JsonSerializerOptions?)null)!
         );
 
-        var RoomsConverter = new ValueConverter<ICollection<Room>, string>
+        var MobilesConverter = new ValueConverter<ICollection<Mobile>, string>
         (
             v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-            v => JsonSerializer.Deserialize<ICollection<Room>>(v, (JsonSerializerOptions?)null)!
+            v => JsonSerializer.Deserialize<ICollection<Mobile>>(v, (JsonSerializerOptions?)null)!
+        );
+
+        var ObjectsConverter = new ValueConverter<ICollection<Entities.Object>, string>
+        (
+            v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+            v => JsonSerializer.Deserialize<ICollection<Entities.Object>>(v, (JsonSerializerOptions?)null)!
+        );
+
+        var PortalsConverter = new ValueConverter<ICollection<Portal>, string>
+        (
+            v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+            v => JsonSerializer.Deserialize<ICollection<Portal>>(v, (JsonSerializerOptions?)null)!
+        );
+
+        var RoomsConverter = new ValueConverter<ICollection<Region>, string>
+        (
+            v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+            v => JsonSerializer.Deserialize<ICollection<Region>>(v, (JsonSerializerOptions?)null)!
         );
 
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Account>().Property(e => e.Players).HasConversion(PlayersConverter);
-        modelBuilder.Entity<Region>().Property(e => e.Rooms).HasConversion(RoomsConverter);
+        modelBuilder.Entity<Player>().Property(e => e.Effects).HasConversion(EffectsConverter);
+        modelBuilder.Entity<Player>().Property(e => e.Objects).HasConversion(ObjectsConverter);
+
+        modelBuilder.Entity<Region>().Property(e => e.Effects).HasConversion(EffectsConverter);
+        modelBuilder.Entity<Region>().Property(e => e.Mobiles).HasConversion(MobilesConverter);
+        modelBuilder.Entity<Region>().Property(e => e.Objects).HasConversion(ObjectsConverter);
+        modelBuilder.Entity<Region>().Property(e => e.Portals).HasConversion(PortalsConverter);
 
         foreach (var type in modelBuilder.Model.GetEntityTypes())
         {

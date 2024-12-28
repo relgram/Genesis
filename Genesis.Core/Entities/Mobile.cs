@@ -3,10 +3,10 @@ using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
-public sealed class Actor : Entity
+public sealed class Mobile : Entity
 {
     [JsonConstructor]
-    public Actor(string name) : base(name)
+    public Mobile(string name) : base(name)
     {
     }
 
@@ -16,9 +16,9 @@ public sealed class Actor : Entity
         init => value.ForEach(Register);
     }
 
-    public ICollection<Item> Items
+    public ICollection<Object> Objects
     {
-        get => [.. _entities.Values.OfType<Item>()];
+        get => [.. _entities.Values.OfType<Object>()];
         init => value.ForEach(Register);
     }
 
@@ -26,9 +26,21 @@ public sealed class Actor : Entity
     {
         static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
 
-        if (Items.Find(x => IsMatch(x.Name, keyword), ref index) is Item item) return item;
+        if (Objects.Find(x => IsMatch(x.Name, keyword), ref index) is Object @object) return @object;
 
         return base.FindMember(keyword, ref index);
+    }
+
+    protected override void LoadMembers(GameEngine engine)
+    {
+        Effects.ForEach(effect => effect.Load(engine));
+        Objects.ForEach(@object => @object.Load(engine));
+    }
+
+    protected override void UnloadMembers(GameEngine engine)
+    {
+        Effects.ForEach(effect => effect.Unload(engine));
+        Objects.ForEach(@object => @object.Unload(engine));
     }
 
     public override void Register(Entity entity)
@@ -45,12 +57,12 @@ public sealed class Actor : Entity
             }
         }
 
-        if (entity is Item item)
+        if (entity is Object @object)
         {
-            if (_entities.TryAdd(item.EntityId, item) == true)
+            if (_entities.TryAdd(@object.EntityId, @object) == true)
             {
-                item.Parent?.Unregister(item);
-                item.Parent = this;
+                @object.Parent?.Unregister(@object);
+                @object.Parent = this;
                 return;
             }
         }
@@ -71,11 +83,11 @@ public sealed class Actor : Entity
             }
         }
 
-        if (entity is Item item)
+        if (entity is Object @object)
         {
-            if (_entities.TryRemove(item.EntityId) == true)
+            if (_entities.TryRemove(@object.EntityId) == true)
             {
-                item.Parent = null;
+                @object.Parent = null;
                 return;
             }
         }

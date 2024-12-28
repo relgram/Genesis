@@ -10,7 +10,7 @@ namespace Genesis.Core.Content;
 
 public sealed class Manager
 {
-    private const string CONNECTION_STRING = @"Server=(local);Database=Shadowlance;TrustServerCertificate=true;Trusted_Connection=True;";
+    private const string CONNECTION_STRING = @"Server=(local)\sqlexpress;Database=Shadowlance;TrustServerCertificate=true;Trusted_Connection=True;";
 
     private readonly PooledDbContextFactory<EntityContext> _contextFactory;
     private readonly Dictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = [];
@@ -65,7 +65,7 @@ public sealed class Manager
         cancellationToken.ThrowIfCancellationRequested();
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i] = new(engine));
-        Search<Region>(x => true).ForEach(region => region.Load(engine));
+        Search<Region>(x => true).ForEach(room => room.Load(engine));
     }
 
     internal void Stop(GameEngine engine, CancellationToken cancellationToken)
@@ -74,7 +74,7 @@ public sealed class Manager
         cancellationToken.ThrowIfCancellationRequested();
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i].Dispose());
-        Find<Region>(x => true).ForEach(region => region.Save(engine));
+        Find<Region>(x => true).ForEach(room => room.Save(engine));
     }
 
     internal void Unregister(Entity entity)

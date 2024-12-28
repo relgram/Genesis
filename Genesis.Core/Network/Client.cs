@@ -1,6 +1,5 @@
 ﻿using System.Net.Sockets;
 using System.Text;
-using Genesis.Core.Content;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -26,11 +25,11 @@ public sealed class Client
         Address = _socket.RemoteEndPoint?.ToString() ?? "Unknown";
     }
 
-    public Entity? Entity { get; private set; }
-
     public string Address { get; }
 
     public Guid ClientId { get; } = Guid.NewGuid();
+
+    public Player? Player { get; private set; }
 
     public string Procedure { get; set; } = "Login";
 
@@ -55,9 +54,9 @@ public sealed class Client
             {
                 if (string.IsNullOrWhiteSpace(Procedure) == true)
                 {
-                    if (Entity is not null)
+                    if (Player is not null)
                     {
-                        engine.Runtime.DoAction(engine, Entity, message.Trim());
+                        engine.Runtime.DoAction(engine, Player, message.Trim());
                     }
                 }
                 else
@@ -130,16 +129,16 @@ public sealed class Client
     {
         try
         {
-            if (Entity is not null)
+            if (Player is not null)
             {
-                engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", Entity);
+                engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", Player);
             }
 
             message = $"<color red>{message}</color>";
 
             SendBytes(message.ToBytes());
 
-            Entity?.Unload(engine);
+            Player?.Unload(engine);
         }
         catch (Exception ex)
         {
@@ -155,7 +154,7 @@ public sealed class Client
 
             _keepAlive.Dispose();
 
-            Entity = null;
+            Player = null;
         }
     }
 
@@ -170,16 +169,6 @@ public sealed class Client
         }
     }
 
-    public void SetAccount(GameEngine engine, Account account)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(account);
-
-        Procedure = string.Empty;
-        account.Client = this;
-        Entity = account;
-    }
-
     public void SetPlayer(GameEngine engine, Player player)
     {
         ArgumentNullException.ThrowIfNull(engine);
@@ -187,6 +176,6 @@ public sealed class Client
 
         Procedure = string.Empty;
         player.Client = this;
-        Entity = player;
+        Player = player;
     }
 }
