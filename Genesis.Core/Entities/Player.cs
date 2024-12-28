@@ -1,12 +1,12 @@
-﻿using System.Linq.Expressions;
-using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq.Expressions;
 using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
+[Table(nameof(Player))]
 public sealed class Player : Entity
 {
-    [JsonConstructor]
     public Player(string name) : base(name)
     {
     }
