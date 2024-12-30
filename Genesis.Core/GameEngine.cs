@@ -1,4 +1,6 @@
-﻿namespace Genesis.Core;
+﻿using System.Threading;
+
+namespace Genesis.Core;
 
 public sealed class GameEngine
 {
@@ -15,9 +17,10 @@ public sealed class GameEngine
 
     public Runtime.Manager Runtime { get; }
 
+    public bool IsRunning { get; private set; }
+
     public void Start(CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
         Runtime.Start(this, cancellationToken);
         Content.Start(this, cancellationToken);
         Network.Start(this, cancellationToken);
@@ -25,7 +28,6 @@ public sealed class GameEngine
 
     public void Stop(CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
         Network.Stop(this, cancellationToken);
         Content.Stop(this, cancellationToken);
         Runtime.Stop(this, cancellationToken);

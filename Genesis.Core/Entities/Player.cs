@@ -73,7 +73,7 @@ public sealed class Player : Entity
 
     public void Save(GameEngine engine) => engine.Content.Save(this);
 
-    public static Player[] Search(GameEngine engine, Expression<Func<Player, bool>> predicate) => engine.Content.Search(predicate);
+    public static Player[] Search(GameEngine engine, Expression<Func<Player, bool>> predicate) => engine.Content.Seek(predicate);
 
     public override void Unregister(Entity entity)
     {

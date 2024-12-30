@@ -41,12 +41,6 @@ internal sealed class EntityContext : DbContext
             v => JsonSerializer.Deserialize<ICollection<Entities.Object>>(v, (JsonSerializerOptions?)null)!
         );
 
-        var PortalsConverter = new ValueConverter<ICollection<Portal>, string>
-        (
-            v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-            v => JsonSerializer.Deserialize<ICollection<Portal>>(v, (JsonSerializerOptions?)null)!
-        );
-
         var RoomsConverter = new ValueConverter<ICollection<Region>, string>
         (
             v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
@@ -61,7 +55,6 @@ internal sealed class EntityContext : DbContext
         modelBuilder.Entity<Region>().Property(e => e.Effects).HasConversion(EffectsConverter);
         modelBuilder.Entity<Region>().Property(e => e.Mobiles).HasConversion(MobilesConverter);
         modelBuilder.Entity<Region>().Property(e => e.Objects).HasConversion(ObjectsConverter);
-        modelBuilder.Entity<Region>().Property(e => e.Portals).HasConversion(PortalsConverter);
 
         foreach (var type in modelBuilder.Model.GetEntityTypes())
         {

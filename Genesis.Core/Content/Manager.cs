@@ -10,12 +10,12 @@ namespace Genesis.Core.Content;
 
 public sealed class Manager
 {
-    private const string CONNECTION_STRING = @"Server=(local)\sqlexpress;Database=Shadowlance;TrustServerCertificate=true;Trusted_Connection=True;";
+    private const string CONNECTION_STRING = @"Server=(local);Database=Shadowlance;TrustServerCertificate=true;Trusted_Connection=True;";
 
     private readonly PooledDbContextFactory<EntityContext> _contextFactory;
     private readonly Dictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = [];
     private readonly ILogger<Manager> _logger;
-    private readonly UpdateTimer[] _updateTimers = new UpdateTimer[1000];
+    private readonly UpdateTimer[] _updateTimers = new UpdateTimer[100];
 
     public Manager(ILogger<Manager> logger)
     {
@@ -36,7 +36,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Register {type}: {entityId}", entity.GetType().Name, entity.EntityId);
+        //_logger.LogInformation("Register {type}: {entityId}", entity.GetType().Name, entity.EntityId);
 
         if (_entities[entity.GetType()].TryAdd(entity.EntityId, entity) == true)
         {
@@ -48,12 +48,14 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Saving: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
+        //_logger.LogInformation("Saving: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
+
         using var context = _contextFactory.CreateDbContext();
+
         context.Upsert(entity).Run();
     }
 
-    internal T[] Search<T>(Expression<Func<T, bool>> predicate) where T : Entity
+    internal T[] Seek<T>(Expression<Func<T, bool>> predicate) where T : Entity
     {
         using var context = _contextFactory.CreateDbContext();
         return [.. context.Set<T>().AsNoTracking().Where(predicate)];
@@ -65,7 +67,8 @@ public sealed class Manager
         cancellationToken.ThrowIfCancellationRequested();
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i] = new(engine));
-        Search<Region>(x => true).ForEach(room => room.Load(engine));
+
+        Parallel.ForEach(Seek<Region>(x => true), x => x.Load(engine));
     }
 
     internal void Stop(GameEngine engine, CancellationToken cancellationToken)
@@ -74,7 +77,8 @@ public sealed class Manager
         cancellationToken.ThrowIfCancellationRequested();
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i].Dispose());
-        Find<Region>(x => true).ForEach(room => room.Save(engine));
+
+        Parallel.ForEach(Find<Region>(x => true), x => x.Save(engine));
     }
 
     internal void Unregister(Entity entity)

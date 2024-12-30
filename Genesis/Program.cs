@@ -8,7 +8,7 @@ namespace Genesis;
 
 internal class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         if (GCSettings.IsServerGC == false)
         {
@@ -34,6 +34,6 @@ internal class Program
 
         var host = builder.Build();
 
-        host.Run();
+        await host.RunAsync();
     }
 }
