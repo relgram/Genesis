@@ -23,10 +23,10 @@ internal sealed class DataContext : DbContext
             v => JsonSerializer.Deserialize<Dictionary<string, Dynamic>>(v, (JsonSerializerOptions?)null)!
         );
 
-        var EntityConverter = new ValueConverter<HashSet<Entity>, string>
+        var EntityConverter = new ValueConverter<ICollection<Entity>, string>
         (
             v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-            v => JsonSerializer.Deserialize<HashSet<Entity>>(v, (JsonSerializerOptions?)null)!
+            v => JsonSerializer.Deserialize<ICollection<Entity>>(v, (JsonSerializerOptions?)null)!
         );
 
         base.OnModelCreating(modelBuilder);

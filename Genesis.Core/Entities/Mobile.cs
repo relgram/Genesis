@@ -5,12 +5,12 @@ using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
-public sealed class Object : Entity
+public sealed class Mobile : Entity
 {
     private readonly ConcurrentDictionary<Guid, Entity> _internal = [];
 
     [JsonConstructor]
-    public Object(string name) : base(name)
+    public Mobile(string name) : base(name)
     {
     }
 
@@ -36,36 +36,6 @@ public sealed class Object : Entity
             Register(@object);
             return;
         }
-    }
-
-    public void Load(GameEngine engine, Mobile parent)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(parent);
-
-        engine.Content.Register(this);
-
-        parent.Register(this);
-    }
-
-    public void Load(GameEngine engine, Object parent)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(parent);
-
-        engine.Content.Register(this);
-
-        parent.Register(this);
-    }
-
-    public void Load(GameEngine engine, Player parent)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(parent);
-
-        engine.Content.Register(this);
-
-        parent.Register(this);
     }
 
     public void Load(GameEngine engine, Region parent)

@@ -6,8 +6,8 @@ using Object = Genesis.Core.Entities.Object;
 
 namespace Genesis.Core.Content;
 
+[JsonDerivedType(typeof(Mobile), typeDiscriminator: nameof(Mobile))]
 [JsonDerivedType(typeof(Object), typeDiscriminator: nameof(Object))]
-[JsonDerivedType(typeof(Portal), typeDiscriminator: nameof(Portal))]
 public abstract class Entity
 {
     private readonly Dictionary<string, Dynamic> _properties = new(StringComparer.OrdinalIgnoreCase);
@@ -17,7 +17,7 @@ public abstract class Entity
         Name = name ?? throw new ArgumentNullException(nameof(name));
     }
 
-    internal virtual HashSet<Entity> Entities { get => []; init { } }
+    internal virtual ICollection<Entity> Entities { get => []; init { } }
 
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid Id { get; init; } = Guid.NewGuid();

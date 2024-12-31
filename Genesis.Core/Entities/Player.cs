@@ -13,9 +13,9 @@ public sealed class Player : Entity
     {
     }
 
-    internal override HashSet<Entity> Entities
+    internal override ICollection<Entity> Entities
     {
-        get => [.. _internal.Values];
+        get => _internal.Values;
         init => value.ForEach(Register);
     }
 
@@ -37,14 +37,14 @@ public sealed class Player : Entity
         }
     }
 
-    public void Load(GameEngine engine, Region region)
+    public void Load(GameEngine engine, Region parent)
     {
         ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(region);
+        ArgumentNullException.ThrowIfNull(parent);
 
         engine.Content.Register(this);
 
-        region.Register(this);
+        parent.Register(this);
     }
 
     public void Register(Object entity)
@@ -55,7 +55,7 @@ public sealed class Player : Entity
 
         if (_internal.TryAdd(entity.Id, entity) == false)
         {
-            throw new ArgumentException("Entity Already Registered");
+            throw new ArgumentException("Object Already Registered");
         }
 
         entity.Parent?.Unregister(entity);

@@ -16,7 +16,7 @@ public sealed class Manager
     private readonly PooledDbContextFactory<DataContext> _contextFactory;
     private readonly Dictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = new()
     {
-        { typeof(Object), [] }, { typeof(Portal), [] }, { typeof(Region), [] }
+        { typeof(Object), [] }, { typeof(Player), [] }, { typeof(Region), [] }
     };
     private readonly ILogger<Manager> _logger;
     private readonly UpdateTimer[] _updateTimers = new UpdateTimer[100];
@@ -26,11 +26,15 @@ public sealed class Manager
         var builder = new DbContextOptionsBuilder<DataContext>().UseSqlServer(CONNECTION_STRING);
         _contextFactory = new PooledDbContextFactory<DataContext>(builder.Options);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        using var context = _contextFactory.CreateDbContext();
+        _ = context.Regions.FirstOrDefault();
     }
 
     internal void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        _logger.LogInformation("Register {type}: {id}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
@@ -41,6 +45,8 @@ public sealed class Manager
     internal void Save(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        _logger.LogInformation("Save {type}: {id}", entity.GetType().Name, entity.Id);
 
         using var context = _contextFactory.CreateDbContext();
 
@@ -82,6 +88,8 @@ public sealed class Manager
     internal void Unregister(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        _logger.LogInformation("Unregister {type}: {id}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].TryRemove(entity.Id, out _) == true)
         {
