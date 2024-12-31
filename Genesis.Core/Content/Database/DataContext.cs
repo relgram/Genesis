@@ -11,6 +11,8 @@ internal sealed class DataContext : DbContext
     {
     }
 
+    public DbSet<Player> Players => Set<Player>();
+
     public DbSet<Region> Regions => Set<Region>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

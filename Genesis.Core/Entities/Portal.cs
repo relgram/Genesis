@@ -9,4 +9,14 @@ public sealed class Portal : Entity
     public Portal(string name) : base(name)
     {
     }
+
+    public void Load(GameEngine engine, Region region)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(region);
+
+        engine.Content.Register(this);
+
+        region.Register(this);
+    }
 }

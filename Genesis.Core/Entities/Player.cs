@@ -4,12 +4,12 @@ using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Region))]
-public sealed class Region : Entity
+[Table(nameof(Player))]
+public sealed class Player : Entity
 {
     private readonly ConcurrentDictionary<Guid, Entity> _internal = [];
 
-    public Region(string name) : base(name)
+    public Player(string name) : base(name)
     {
     }
 
@@ -26,28 +26,6 @@ public sealed class Region : Entity
         init => value.ForEach(Register);
     }
 
-    [NotMapped]
-    public ICollection<Portal> Portals
-    {
-        get => [.. _internal.Values.OfType<Portal>()];
-        init => value.ForEach(Register);
-    }
-
-    private void LoadMembers(GameEngine engine)
-    {
-        Parallel.ForEach(Objects, x => x.Load(engine, this));
-        Parallel.ForEach(Portals, x => x.Load(engine, this));
-    }
-
-    public void Load(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        engine.Content.Register(this);
-
-        LoadMembers(engine);
-    }
-
     internal override void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
@@ -59,8 +37,20 @@ public sealed class Region : Entity
         }
     }
 
+    public void Load(GameEngine engine, Region region)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(region);
+
+        engine.Content.Register(this);
+
+        region.Register(this);
+    }
+
     public void Register(Object entity)
     {
+        ArgumentNullException.ThrowIfNull(entity);
+
         ArgumentNullException.ThrowIfNull(entity);
 
         if (_internal.TryAdd(entity.Id, entity) == false)
@@ -71,12 +61,5 @@ public sealed class Region : Entity
         entity.Parent?.Unregister(entity);
 
         entity.Parent = this;
-    }
-
-    public void Save(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        engine.Content.Save(this);
     }
 }

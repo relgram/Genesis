@@ -32,8 +32,6 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Register {type}: {entityId}", entity.GetType().Name, entity.Id);
-
         if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
             _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Register(entity);
@@ -43,8 +41,6 @@ public sealed class Manager
     internal void Save(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-
-        _logger.LogInformation("Saving: [{type}] {entity}", entity.GetType().Name, entity.Id);
 
         using var context = _contextFactory.CreateDbContext();
 
@@ -86,8 +82,6 @@ public sealed class Manager
     internal void Unregister(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-
-        _logger.LogInformation("Unregister {type}: {entityId}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].TryRemove(entity.Id, out _) == true)
         {
