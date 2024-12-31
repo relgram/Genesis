@@ -27,9 +27,7 @@ public sealed class Client
 
     public string Address { get; }
 
-    public Guid ClientId { get; } = Guid.NewGuid();
-
-    public Player? Player { get; private set; }
+    public Guid Id { get; } = Guid.NewGuid();
 
     public string Procedure { get; set; } = "Login";
 
@@ -54,10 +52,10 @@ public sealed class Client
             {
                 if (string.IsNullOrWhiteSpace(Procedure) == true)
                 {
-                    if (Player is not null)
-                    {
-                        engine.Runtime.DoAction(engine, Player, message.Trim());
-                    }
+                    //if (Player is not null)
+                    //{
+                    //    engine.Runtime.DoAction(engine, Player, message.Trim());
+                    //}
                 }
                 else
                 {
@@ -129,16 +127,16 @@ public sealed class Client
     {
         try
         {
-            if (Player is not null)
-            {
-                engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", Player);
-            }
+            //if (Player is not null)
+            //{
+            //    engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", Player);
+            //}
 
             message = $"<color red>{message}</color>";
 
             SendBytes(message.ToBytes());
 
-            Player?.Unload(engine);
+            //Player?.Unload(engine);
         }
         catch (Exception ex)
         {
@@ -154,7 +152,7 @@ public sealed class Client
 
             _keepAlive.Dispose();
 
-            Player = null;
+            //Player = null;
         }
     }
 
@@ -169,13 +167,13 @@ public sealed class Client
         }
     }
 
-    public void SetPlayer(GameEngine engine, Player player)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(player);
+    //public void SetPlayer(GameEngine engine, Player player)
+    //{
+    //    ArgumentNullException.ThrowIfNull(engine);
+    //    ArgumentNullException.ThrowIfNull(player);
 
-        Procedure = string.Empty;
-        player.Client = this;
-        Player = player;
-    }
+    //    Procedure = string.Empty;
+    //    player.Client = this;
+    //    Player = player;
+    //}
 }

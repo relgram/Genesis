@@ -32,9 +32,9 @@ internal sealed class UpdateTimer : IDisposable
     {
         ArgumentNullException.ThrowIfNull(entity);
         
-        if (_entities.TryAdd(entity.EntityId, entity) == false)
+        if (_entities.TryAdd(entity.Id, entity) == false)
         {
-            throw new Exception($"Failed to register [{entity.GetType().Name}]: {entity.EntityId}");
+            throw new Exception($"Failed to register [{entity.GetType().Name}]: {entity.Id}");
         }
     }
 
@@ -42,9 +42,9 @@ internal sealed class UpdateTimer : IDisposable
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryRemove(entity.EntityId) == false)
+        if (_entities.TryRemove(entity.Id, out _) == false)
         {
-            throw new Exception($"Failed to unregister [{entity.GetType().Name}]: {entity.EntityId}");
+            throw new Exception($"Failed to unregister [{entity.GetType().Name}]: {entity.Id}");
         }
     }
 }

@@ -5,6 +5,7 @@ using Genesis.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
+using Object = Genesis.Core.Entities.Object;
 
 namespace Genesis.Core.Content;
 
@@ -12,33 +13,28 @@ public sealed class Manager
 {
     private const string CONNECTION_STRING = @"Server=(local);Database=Shadowlance;TrustServerCertificate=true;Trusted_Connection=True;";
 
-    private readonly PooledDbContextFactory<EntityContext> _contextFactory;
-    private readonly Dictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = [];
+    private readonly PooledDbContextFactory<DataContext> _contextFactory;
+    private readonly Dictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = new()
+    {
+        { typeof(Object), [] }, { typeof(Portal), [] }, { typeof(Region), [] }
+    };
     private readonly ILogger<Manager> _logger;
     private readonly UpdateTimer[] _updateTimers = new UpdateTimer[100];
 
     public Manager(ILogger<Manager> logger)
     {
-        var builder = new DbContextOptionsBuilder<EntityContext>().UseSqlServer(CONNECTION_STRING);
-        _contextFactory = new PooledDbContextFactory<EntityContext>(builder.Options);
+        var builder = new DbContextOptionsBuilder<DataContext>().UseSqlServer(CONNECTION_STRING);
+        _contextFactory = new PooledDbContextFactory<DataContext>(builder.Options);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-        foreach (var type in typeof(Entity).Assembly.GetTypes().Where(x => x.IsAbstract is false))
-        {
-            if (type.IsAssignableTo(typeof(Entity)) is true)
-            {
-                _entities[type] = [];
-            }
-        }
     }
 
     internal void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        //_logger.LogInformation("Register {type}: {entityId}", entity.GetType().Name, entity.EntityId);
+        _logger.LogInformation("Register {type}: {entityId}", entity.GetType().Name, entity.Id);
 
-        if (_entities[entity.GetType()].TryAdd(entity.EntityId, entity) == true)
+        if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
             _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Register(entity);
         }
@@ -48,7 +44,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        //_logger.LogInformation("Saving: [{type}] {entity}", entity.GetType().Name, entity.EntityId);
+        _logger.LogInformation("Saving: [{type}] {entity}", entity.GetType().Name, entity.Id);
 
         using var context = _contextFactory.CreateDbContext();
 
@@ -65,29 +61,35 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
+        _logger.LogInformation("Starting Content Manager...");
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i] = new(engine));
 
         Parallel.ForEach(Seek<Region>(x => true), x => x.Load(engine));
+
+        _logger.LogInformation("Content Manager Started");
     }
 
     internal void Stop(GameEngine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
+        _logger.LogInformation("Stopping Content Manager...");
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i].Dispose());
 
         Parallel.ForEach(Find<Region>(x => true), x => x.Save(engine));
+
+        _logger.LogInformation("Content Manager Stopped");
     }
 
     internal void Unregister(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Unregister {type}: {entityId}", entity.GetType().Name, entity.EntityId);
+        _logger.LogInformation("Unregister {type}: {entityId}", entity.GetType().Name, entity.Id);
 
-        if (_entities[entity.GetType()].TryRemove(entity.EntityId) == true)
+        if (_entities[entity.GetType()].TryRemove(entity.Id, out _) == true)
         {
             _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Unregister(entity);
         }

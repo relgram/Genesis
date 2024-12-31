@@ -57,7 +57,7 @@ public sealed class Manager
 
         _logger.LogInformation("Register client: {address}", client.Address);
 
-        if (_clients.TryAdd(client.ClientId, client) == false)
+        if (_clients.TryAdd(client.Id, client) == false)
         {
             throw new ArgumentException($"Failed to register client: {client.Address}");
         }
@@ -67,6 +67,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
+        _logger.LogInformation("Starting Network Manager...");
 
         _tcpListener.Start();
 
@@ -74,12 +75,15 @@ public sealed class Manager
         {
             _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
         });
+
+        _logger.LogInformation("Network Manager Started");
     }
 
     internal void Stop(GameEngine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
+        _logger.LogInformation("Stopping Network Manager...");
 
         _tcpListener.Stop();
 
@@ -87,6 +91,8 @@ public sealed class Manager
         {
             client.Disconnect(engine, "Server Shutting Down");
         }
+
+        _logger.LogInformation("Network Manager Stopped");
     }
 
     internal void Unregister(Client client)
@@ -95,7 +101,7 @@ public sealed class Manager
 
         _logger.LogInformation("Unregister client: {address}", client.Address);
 
-        if (_clients.TryRemove(client.ClientId) == false)
+        if (_clients.TryRemove(client.Id, out _) == false)
         {
             throw new ArgumentException($"Failed to unregister client: {client.Address}");
         }

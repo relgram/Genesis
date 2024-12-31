@@ -1,97 +1,61 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
 public sealed class Object : Entity
 {
+    private readonly HashSet<Entity> _internal = [];
+
     [JsonConstructor]
     public Object(string name) : base(name)
     {
     }
 
-    public ICollection<Effect> Effects
+    internal override HashSet<Entity> Entities
     {
-        get => [.. _entities.Values.OfType<Effect>()];
+        get => [.. _internal];
         init => value.ForEach(Register);
     }
 
+    [NotMapped]
     public ICollection<Object> Objects
     {
-        get => [.. _entities.Values.OfType<Object>()];
+        get => [.. _internal.OfType<Object>()];
         init => value.ForEach(Register);
     }
 
-    protected override Entity? FindMember(string keyword, ref int index)
+    public void Load(GameEngine engine, Region region)
     {
-        static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
+        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(region);
 
-        if (Objects.Find(x => IsMatch(x.Name, keyword), ref index) is Object @object) return @object;
+        engine.Content.Register(this);
 
-        return base.FindMember(keyword, ref index);
+        region.Register(this);
     }
 
-    protected override void LoadMembers(GameEngine engine)
-    {
-        Effects.ForEach(effect => effect.Load(engine));
-        Objects.ForEach(@object => @object.Load(engine));
-    }
-
-    protected override void UnloadMembers(GameEngine engine)
-    {
-        Effects.ForEach(effect => effect.Unload(engine));
-        Objects.ForEach(@object => @object.Unload(engine));
-    }
-
-    public override void Register(Entity entity)
+    internal override void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (entity is Effect effect)
-        {
-            if (_entities.TryAdd(effect.EntityId, effect) == true)
-            {
-                effect.Parent?.Unregister(effect);
-                effect.Parent = this;
-                return;
-            }
-        }
-
         if (entity is Object @object)
         {
-            if (_entities.TryAdd(@object.EntityId, @object) == true)
-            {
-                @object.Parent?.Unregister(@object);
-                @object.Parent = this;
-                return;
-            }
+            Register(@object);
+            return;
         }
-
-        base.Register(entity);
     }
 
-    public override void Unregister(Entity entity)
+    public void Register(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (entity is Effect effect)
+        if (_internal.Add(entity) == true)
         {
-            if (_entities.TryRemove(effect.EntityId) == true)
-            {
-                effect.Parent = null;
-                return;
-            }
+            entity.Parent?.Unregister(entity);
+            entity.Parent = this;
+            return;
         }
-
-        if (entity is Object @object)
-        {
-            if (_entities.TryRemove(@object.EntityId) == true)
-            {
-                @object.Parent = null;
-                return;
-            }
-        }
-
-        base.Unregister(entity);
     }
 }

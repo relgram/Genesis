@@ -24,14 +24,16 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
-
-        LoadLibrary();
+        _logger.LogInformation("Starting Runtime Manager...");
+        _logger.LogInformation("Runtime Manager Started");
     }
 
     internal void Stop(GameEngine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
+        _logger.LogInformation("Stopping Runtime Manager...");
+        _logger.LogInformation("Runtime Manager Stopped");
     }
 
     public void DoAction(GameEngine engine, string name, string method, params object[] args)
@@ -80,7 +82,7 @@ public sealed class Manager
                 {
                     if (_actions[name].Execute(engine, entity, message) == false)
                     {
-                        entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you were referring to.\n>\n"));
+                        //entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you were referring to.\n>\n"));
                     }
 
                     return;
@@ -94,7 +96,7 @@ public sealed class Manager
                         {
                             if (item.Value.Execute(engine, entity, message) == false)
                             {
-                                entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you were referring to.\r\n>"));
+                                //entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you were referring to.\r\n>"));
                             }
 
                             return;
@@ -103,7 +105,7 @@ public sealed class Manager
                 }
             }
 
-            entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("Please rephrase that command.\n>\n"));
+            //entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("Please rephrase that command.\n>\n"));
         }
         catch (Exception ex)
         {
@@ -138,71 +140,71 @@ public sealed class Manager
         return false;
     }
 
-    public void LoadLibrary(Player? sender = null)
-    {
-        try
-        {
-            lock (_internalLock)
-            {
-                _actions.Clear();
+    //public void LoadLibrary(Player? sender = null)
+    //{
+    //    try
+    //    {
+    //        lock (_internalLock)
+    //        {
+    //            _actions.Clear();
 
-                _procedures.Clear();
+    //            _procedures.Clear();
 
-                var fileName = Path.GetTempFileName();
+    //            var fileName = Path.GetTempFileName();
 
-                File.Copy(_libraryPath, fileName, overwrite: true);
+    //            File.Copy(_libraryPath, fileName, overwrite: true);
 
-                var context = new AssemblyLoadContext("Genesis", isCollectible: true);
+    //            var context = new AssemblyLoadContext("Genesis", isCollectible: true);
 
-                sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Loading Library...\n>\n"));
+    //            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Loading Library...\n>\n"));
 
-                var assembly = context.LoadFromAssemblyPath(fileName);
+    //            var assembly = context.LoadFromAssemblyPath(fileName);
 
-                foreach (var type in assembly.GetTypes().Where(x => x.IsAbstract == false))
-                {
-                    if (type.IsAssignableTo(typeof(Action)) == true)
-                    {
-                        if (Activator.CreateInstance(type) is Action action)
-                        {
-                            if (_actions.TryAdd(action.Name, action) == false)
-                            {
-                                _logger.LogWarning("Duplicate action found: {action}", action.Name);
-                            }
+    //            foreach (var type in assembly.GetTypes().Where(x => x.IsAbstract == false))
+    //            {
+    //                if (type.IsAssignableTo(typeof(Action)) == true)
+    //                {
+    //                    if (Activator.CreateInstance(type) is Action action)
+    //                    {
+    //                        if (_actions.TryAdd(action.Name, action) == false)
+    //                        {
+    //                            _logger.LogWarning("Duplicate action found: {action}", action.Name);
+    //                        }
 
-                            if (action.Alias is not null)
-                            {
-                                if (_actions.TryAdd(action.Alias, action) == false)
-                                {
-                                    _logger.LogWarning("Duplicate action found: {action}", action.Alias);
-                                }
-                            }
-                        }
-                    }
+    //                        if (action.Alias is not null)
+    //                        {
+    //                            if (_actions.TryAdd(action.Alias, action) == false)
+    //                            {
+    //                                _logger.LogWarning("Duplicate action found: {action}", action.Alias);
+    //                            }
+    //                        }
+    //                    }
+    //                }
 
-                    if (type.IsAssignableTo(typeof(Procedure)) == true)
-                    {
-                        if (Activator.CreateInstance(type) is Procedure procedure)
-                        {
-                            if (_procedures.TryAdd(procedure.Name, procedure) == false)
-                            {
-                                _logger.LogWarning("Duplicate procedure found: {procedure}", procedure.Name);
-                            }
-                        }
-                    }
-                }
-            }
+    //                if (type.IsAssignableTo(typeof(Procedure)) == true)
+    //                {
+    //                    if (Activator.CreateInstance(type) is Procedure procedure)
+    //                    {
+    //                        if (_procedures.TryAdd(procedure.Name, procedure) == false)
+    //                        {
+    //                            _logger.LogWarning("Duplicate procedure found: {procedure}", procedure.Name);
+    //                        }
+    //                    }
+    //                }
+    //            }
+    //        }
 
-            _logger.LogInformation("Loaded {count} Actions", _actions.Count);
-            _logger.LogInformation("Loaded {count} Procedures", _procedures.Count);
+    //        _logger.LogInformation("Loaded {count} Actions", _actions.Count);
+    //        _logger.LogInformation("Loaded {count} Procedures", _procedures.Count);
 
-            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_actions.Count} Actions\n"));
-            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_procedures.Count} Procedures\n>\n"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogCritical(ex, "LoadGameplay failed unexpectedly");
+    //        sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_actions.Count} Actions\n"));
+    //        sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_procedures.Count} Procedures\n>\n"));
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogCritical(ex, "LoadGameplay failed unexpectedly");
 
-            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"LoadGameplay failed unexpectedly:{ex.Message}"));
-        }
-    }
+    //        sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"LoadGameplay failed unexpectedly:{ex.Message}"));
+    //    }
+    //}
 }

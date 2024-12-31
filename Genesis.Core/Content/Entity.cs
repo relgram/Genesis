@@ -1,17 +1,15 @@
-﻿using System.Collections.Concurrent;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Genesis.Core.Entities;
-using Genesis.Core.Network;
+using Object = Genesis.Core.Entities.Object;
 
 namespace Genesis.Core.Content;
 
-[NotMapped]
+[JsonDerivedType(typeof(Object), typeDiscriminator: nameof(Object))]
+[JsonDerivedType(typeof(Portal), typeDiscriminator: nameof(Portal))]
 public abstract class Entity
 {
-    protected readonly ConcurrentDictionary<Guid, Entity> _entities = [];
-    private Entity? _parent;
     private readonly Dictionary<string, Dynamic> _properties = new(StringComparer.OrdinalIgnoreCase);
 
     public Entity(string name)
@@ -19,86 +17,29 @@ public abstract class Entity
         Name = name ?? throw new ArgumentNullException(nameof(name));
     }
 
-    [NotMapped]
-    [JsonIgnore]
-    public Client? Client { get; internal set; }
+    internal virtual HashSet<Entity> Entities { get => []; init { } }
 
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
-    public Guid EntityId { get; init; } = Guid.NewGuid();
+    public Guid Id { get; init; } = Guid.NewGuid();
 
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; }
 
-    [NotMapped]
-    [JsonIgnore]
-    public Entity? Parent
-    {
-        get => _parent;
-        internal set => _parent = value;
-    }
+    [JsonIgnore, NotMapped]
+    public Entity? Parent { get; internal set; }
 
-    [NotMapped]
-    [JsonInclude]
     public Dictionary<string, Dynamic> Properties
     {
         internal get => _properties.ToDictionary(x => x.Key, x => x.Value);
         init => value.ForEach(x => _properties[x.Key] = x.Value);
     }
 
-    public Dynamic this[string key]
+    internal virtual void Register(Entity entity)
     {
-        get => _properties.GetValueOrDefault(key, Dynamic.Empty);
-        set => _properties[key] = value ?? Dynamic.Empty;
+        throw new ArgumentException("Entity Not Supported");
     }
 
-    protected virtual Entity? FindMember(string keyword, ref int index) => null;
-
-    protected virtual void LoadMembers(GameEngine engine)
+    internal virtual void Unregister(Entity entity)
     {
-    }
-
-    protected virtual void UnloadMembers(GameEngine engine)
-    {
-    }
-
-    public Entity? FindMember(string keyword, int index = 0)
-    {
-        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
-    }
-
-    public void Load(GameEngine engine, Entity? parent = null)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        engine.Content.Register(this);
-
-        parent?.Register(this);
-
-        LoadMembers(engine);
-    }
-
-    public void Unload(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        if (this is Player)
-        {
-            engine.Content.Save(this);
-        }
-
-        UnloadMembers(engine);
-
-        Parent?.Unregister(this);
-
-        engine.Content.Unregister(this);
-    }
-
-    public virtual void Register(Entity entity)
-    {
-        throw new ArgumentException($"Unable to register entity: {entity}");
-    }
-
-    public virtual void Unregister(Entity entity)
-    {
-        throw new ArgumentException($"Unable to unregister entity: {entity}");
+        throw new ArgumentException("Entity Not Supported");
     }
 }
