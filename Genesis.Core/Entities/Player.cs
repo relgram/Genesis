@@ -1,25 +1,15 @@
 ﻿using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
-using System.Text.Json.Serialization;
 using Genesis.Core.Content;
-using Genesis.Core.Network;
 
 namespace Genesis.Core.Entities;
 
 [Table(nameof(Player))]
 public sealed class Player : Entity
 {
-    private readonly ConcurrentDictionary<Guid, Entity> _entities = [];
-
     public Player(string name) : base(name)
     {
-    }
-
-    internal override ICollection<Entity> Entities
-    {
-        get => [.. _entities.Values.OfType<Entity>()];
-        init => value.ForEach(Register);
     }
 
     [NotMapped]
@@ -36,20 +26,6 @@ public sealed class Player : Entity
         init => value.ForEach(Register);
     }
 
-    private void Register(Entity entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        if (_entities.TryAdd(entity.Id, entity) == false)
-        {
-            throw new ArgumentException("Entity Already Registered");
-        }
-
-        entity.Parent?.Unregister(entity);
-
-        entity.Parent = this;
-    }
-
     protected override Entity? FindMember(string keyword, ref int index)
     {
         static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
@@ -63,30 +39,43 @@ public sealed class Player : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryAdd(entity.Id, entity) == true)
+        if (_entities.TryAdd(entity.Id, entity) == false)
         {
-            entity.Parent?.Unregister(entity);
-            entity.Parent = this;
-            return;
+            throw new ArgumentException("Effect Already Registered");
         }
+
+        entity.Parent?.Unregister(entity);
+
+        entity.Parent = this;
     }
 
     public void Register(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryAdd(entity.Id, entity) == true)
+        if (_entities.TryAdd(entity.Id, entity) == false)
         {
-            entity.Parent?.Unregister(entity);
-            entity.Parent = this;
-            return;
+            throw new ArgumentException("Object Already Registered");
         }
+
+        entity.Parent?.Unregister(entity);
+
+        entity.Parent = this;
     }
 
     public static Player[] Seek(GameEngine engine, Expression<Func<Player, bool>> predicate)
     {
         ArgumentNullException.ThrowIfNull(engine);
         return engine.Content.Seek(predicate);
+    }
+
+    public override void Unload(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        engine.Content.Save(this);
+
+        base.Unload(engine);
     }
 
     public void Unregister(Effect entity)

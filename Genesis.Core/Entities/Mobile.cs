@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Genesis.Core.Content;
 
@@ -7,17 +6,9 @@ namespace Genesis.Core.Entities;
 
 public sealed class Mobile : Entity
 {
-    private readonly ConcurrentDictionary<Guid, Entity> _entities = [];
-
     [JsonConstructor]
     public Mobile(string name) : base(name)
     {
-    }
-
-    internal override ICollection<Entity> Entities
-    {
-        get => [.. _entities.Values.OfType<Entity>()];
-        init => value.ForEach(Register);
     }
 
     [NotMapped]
@@ -32,20 +23,6 @@ public sealed class Mobile : Entity
     {
         get => [.. _entities.Values.OfType<Object>()];
         init => value.ForEach(Register);
-    }
-
-    private void Register(Entity entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        if (_entities.TryAdd(entity.Id, entity) == false)
-        {
-            throw new ArgumentException("Entity Already Registered");
-        }
-
-        entity.Parent?.Unregister(entity);
-
-        entity.Parent = this;
     }
 
     public void Register(Effect entity)
@@ -76,21 +53,27 @@ public sealed class Mobile : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryRemove(entity.Id) == true)
+        if (_entities.TryRemove(entity.Id) == false)
         {
-            entity.Parent = null;
-            return;
+            throw new ArgumentException("Effect Not Registered");
         }
+
+        entity.Parent = null;
+
+        return;
     }
 
     public void Unregister(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryRemove(entity.Id) == true)
+        if (_entities.TryRemove(entity.Id) == false)
         {
-            entity.Parent = null;
-            return;
+            throw new ArgumentException("Object Not Registered");
         }
+
+        entity.Parent = null;
+
+        return;
     }
 }

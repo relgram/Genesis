@@ -70,8 +70,6 @@ public sealed class Manager
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i].Dispose());
 
-        Parallel.ForEach(Find<Region>(x => true), Save);
-
         Parallel.ForEach(Find<Region>(x => true), x => x.Unload(engine));
 
         _logger.LogInformation("Content Manager Stopped");

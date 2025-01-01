@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Genesis.Core.Entities;
@@ -12,6 +13,7 @@ namespace Genesis.Core.Content;
 [JsonDerivedType(typeof(Object), typeDiscriminator: nameof(Object))]
 public abstract class Entity
 {
+    protected readonly ConcurrentDictionary<Guid, Entity> _entities = [];
     private readonly Dictionary<string, Dynamic> _properties = new(StringComparer.OrdinalIgnoreCase);
 
     public Entity(string name)
@@ -23,7 +25,11 @@ public abstract class Entity
     [JsonIgnore]
     public Client? Client { get; internal set; }
 
-    internal virtual ICollection<Entity> Entities { get => []; init { } }
+    internal ICollection<Entity> Entities
+    {
+        get => [.. _entities.Values.OfType<Entity>()];
+        init => value.ForEach(Register);
+    }
 
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid Id { get; init; } = Guid.NewGuid();
@@ -43,6 +49,20 @@ public abstract class Entity
     {
         get => _properties.GetValueOrDefault(key, Dynamic.Empty);
         set => _properties[key] = value ?? Dynamic.Empty;
+    }
+
+    private void Register(Entity entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        if (_entities.TryAdd(entity.Id, entity) == false)
+        {
+            throw new ArgumentException("Entity Already Registered");
+        }
+
+        entity.Parent?.Unregister(entity);
+
+        entity.Parent = this;
     }
 
     protected virtual Entity? FindMember(string keyword, ref int index) => null;
@@ -65,20 +85,20 @@ public abstract class Entity
         return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
     }
 
-    public void Load(GameEngine engine)
+    public virtual void Load(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
         engine.Content.Register(this);
 
-        LoadMembers(engine);
+        Entities.ForEach(x => x.Load(engine));
     }
 
-    public void Unload(GameEngine engine)
+    public virtual void Unload(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
-        UnloadMembers(engine);
+        Entities.ForEach(x => x.Unload(engine));
 
         engine.Content.Unregister(this);
     }
