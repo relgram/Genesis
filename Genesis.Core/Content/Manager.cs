@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Linq.Expressions;
+using System.Numerics;
 using Genesis.Core.Content.Database;
 using Genesis.Core.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -42,17 +43,6 @@ public sealed class Manager
         }
     }
 
-    internal void Save(Entity entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        _logger.LogInformation("Save {type}: {id}", entity.GetType().Name, entity.Id);
-
-        using var context = _contextFactory.CreateDbContext();
-
-        context.Upsert(entity).Run();
-    }
-
     internal T[] Seek<T>(Expression<Func<T, bool>> predicate) where T : Entity
     {
         using var context = _contextFactory.CreateDbContext();
@@ -80,7 +70,9 @@ public sealed class Manager
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i].Dispose());
 
-        Parallel.ForEach(Find<Region>(x => true), x => x.Save(engine));
+        Parallel.ForEach(Find<Region>(x => true), Save);
+
+        Parallel.ForEach(Find<Region>(x => true), x => x.Unload(engine));
 
         _logger.LogInformation("Content Manager Stopped");
     }
@@ -111,5 +103,33 @@ public sealed class Manager
     public T? Get<T>(Guid entityId) where T : Entity
     {
         return _entities[typeof(T)].GetValueOrDefault(entityId) as T;
+    }
+
+    /// <summary>
+    /// Save provided Player to database
+    /// </summary>
+    public void Save(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+
+        _logger.LogInformation("Save {type}: {id}", player.GetType().Name, player.Id);
+
+        using var context = _contextFactory.CreateDbContext();
+
+        context.Players.Upsert(player).Run();
+    }
+
+    /// <summary>
+    /// Save provided Region to database
+    /// </summary>
+    public void Save(Region region)
+    {
+        ArgumentNullException.ThrowIfNull(region);
+
+        _logger.LogInformation("Save {type}: {id}", region.GetType().Name, region.Id);
+
+        using var context = _contextFactory.CreateDbContext();
+
+        context.Regions.Upsert(region).Run();
     }
 }

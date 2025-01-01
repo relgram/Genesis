@@ -7,7 +7,7 @@ namespace Genesis.Core.Entities;
 
 public sealed class Mobile : Entity
 {
-    private readonly ConcurrentDictionary<Guid, Entity> _internal = [];
+    private readonly ConcurrentDictionary<Guid, Entity> _entities = [];
 
     [JsonConstructor]
     public Mobile(string name) : base(name)
@@ -16,51 +16,81 @@ public sealed class Mobile : Entity
 
     internal override ICollection<Entity> Entities
     {
-        get => _internal.Values;
+        get => [.. _entities.Values.OfType<Entity>()];
+        init => value.ForEach(Register);
+    }
+
+    [NotMapped]
+    public ICollection<Effect> Effects
+    {
+        get => [.. _entities.Values.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Object> Objects
     {
-        get => [.. _internal.Values.OfType<Object>()];
+        get => [.. _entities.Values.OfType<Object>()];
         init => value.ForEach(Register);
     }
 
-    internal override void Register(Entity entity)
+    private void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (entity is Object @object)
+        if (_entities.TryAdd(entity.Id, entity) == false)
         {
-            Register(@object);
-            return;
+            throw new ArgumentException("Entity Already Registered");
         }
+
+        entity.Parent?.Unregister(entity);
+
+        entity.Parent = this;
     }
 
-    public void Load(GameEngine engine, Region parent)
+    public void Register(Effect entity)
     {
-        ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(parent);
+        ArgumentNullException.ThrowIfNull(entity);
 
-        engine.Content.Register(this);
-
-        parent.Register(this);
+        if (_entities.TryAdd(entity.Id, entity) == true)
+        {
+            entity.Parent?.Unregister(entity);
+            entity.Parent = this;
+            return;
+        }
     }
 
     public void Register(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
+        if (_entities.TryAdd(entity.Id, entity) == true)
+        {
+            entity.Parent?.Unregister(entity);
+            entity.Parent = this;
+            return;
+        }
+    }
+
+    public void Unregister(Effect entity)
+    {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_internal.TryAdd(entity.Id, entity) == false)
+        if (_entities.TryRemove(entity.Id) == true)
         {
-            throw new ArgumentException("Object Already Registered");
+            entity.Parent = null;
+            return;
         }
+    }
 
-        entity.Parent?.Unregister(entity);
+    public void Unregister(Object entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
 
-        entity.Parent = this;
+        if (_entities.TryRemove(entity.Id) == true)
+        {
+            entity.Parent = null;
+            return;
+        }
     }
 }

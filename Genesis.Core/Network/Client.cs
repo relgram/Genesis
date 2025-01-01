@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+using Genesis.Core.Content;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -27,6 +28,8 @@ public sealed class Client
 
     public string Address { get; }
 
+    public Entity? Entity { get; private set; }
+
     public Guid Id { get; } = Guid.NewGuid();
 
     public string Procedure { get; set; } = "Login";
@@ -52,10 +55,10 @@ public sealed class Client
             {
                 if (string.IsNullOrWhiteSpace(Procedure) == true)
                 {
-                    //if (Player is not null)
-                    //{
-                    //    engine.Runtime.DoAction(engine, Player, message.Trim());
-                    //}
+                    if (Entity is not null)
+                    {
+                        engine.Runtime.DoAction(engine, Entity, message.Trim());
+                    }
                 }
                 else
                 {
@@ -127,16 +130,16 @@ public sealed class Client
     {
         try
         {
-            //if (Player is not null)
-            //{
-            //    engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", Player);
-            //}
+            if (Entity is Player player)
+            {
+                engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", player);
+            }
 
             message = $"<color red>{message}</color>";
 
             SendBytes(message.ToBytes());
 
-            //Player?.Unload(engine);
+            Entity?.Unload(engine);
         }
         catch (Exception ex)
         {
@@ -152,7 +155,7 @@ public sealed class Client
 
             _keepAlive.Dispose();
 
-            //Player = null;
+            Entity = null;
         }
     }
 
@@ -167,13 +170,13 @@ public sealed class Client
         }
     }
 
-    //public void SetPlayer(GameEngine engine, Player player)
-    //{
-    //    ArgumentNullException.ThrowIfNull(engine);
-    //    ArgumentNullException.ThrowIfNull(player);
+    public void SetEntity(GameEngine engine, Entity entity)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(entity);
 
-    //    Procedure = string.Empty;
-    //    player.Client = this;
-    //    Player = player;
-    //}
+        Procedure = string.Empty;
+        entity.Client = this;
+        Entity = entity;
+    }
 }

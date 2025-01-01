@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq.Expressions;
 using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
@@ -7,7 +8,7 @@ namespace Genesis.Core.Entities;
 [Table(nameof(Region))]
 public sealed class Region : Entity
 {
-    private readonly ConcurrentDictionary<Guid, Entity> _internal = [];
+    private readonly ConcurrentDictionary<Guid, Entity> _entities = [];
     private readonly ConcurrentDictionary<Guid, Player> _players = [];
 
     public Region(string name) : base(name)
@@ -16,21 +17,28 @@ public sealed class Region : Entity
 
     internal override ICollection<Entity> Entities
     {
-        get => _internal.Values;
+        get => [.. _entities.Values.OfType<Entity>()];
+        init => value.ForEach(Register);
+    }
+
+    [NotMapped]
+    public ICollection<Effect> Effects
+    {
+        get => [.. _entities.Values.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Mobile> Mobiles
     {
-        get => [.. _internal.Values.OfType<Mobile>()];
+        get => [.. _entities.Values.OfType<Mobile>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Object> Objects
     {
-        get => [.. _internal.Values.OfType<Object>()];
+        get => [.. _entities.Values.OfType<Object>()];
         init => value.ForEach(Register);
     }
 
@@ -40,48 +48,48 @@ public sealed class Region : Entity
         get => [.. _players.Values.OfType<Player>()];
     }
 
-    private void LoadMembers(GameEngine engine)
+    protected override void LoadMembers(GameEngine engine)
     {
-        Parallel.ForEach(Objects, x => x.Load(engine, this));
+        Objects.ForEach(entity => entity.Load(engine));
     }
 
-    public void Load(GameEngine engine)
+    protected override void UnloadMembers(GameEngine engine)
     {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        engine.Content.Register(this);
-
-        LoadMembers(engine);
+        Objects.ForEach(entity => entity.Unload(engine));
     }
 
-    internal override void Register(Entity entity)
+    private void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (entity is Mobile mobile)
+        if (_entities.TryAdd(entity.Id, entity) == false)
         {
-            Register(mobile);
-            return;
+            throw new ArgumentException("Entity Already Registered");
         }
 
-        if (entity is Object @object)
-        {
-            Register(@object);
-            return;
-        }
+        entity.Parent?.Unregister(entity);
 
-        if (entity is Player player)
-        {
-            Register(player);
-            return;
-        }
+        entity.Parent = this;
+    }
+
+    protected override Entity? FindMember(string keyword, ref int index)
+    {
+        static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
+
+        if (Objects.Find(x => IsMatch(x.Name, keyword), ref index) is Object @object) return @object;
+
+        if (Mobiles.Find(x => IsMatch(x.Name, keyword), ref index) is Mobile mobile) return mobile;
+
+        if (Players.Find(x => IsMatch(x.Name, keyword), ref index) is Player player) return player;
+
+        return null;
     }
 
     public void Register(Mobile entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_internal.TryAdd(entity.Id, entity) == false)
+        if (_entities.TryAdd(entity.Id, entity) == false)
         {
             throw new ArgumentException("Mobile Already Registered");
         }
@@ -95,7 +103,7 @@ public sealed class Region : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_internal.TryAdd(entity.Id, entity) == false)
+        if (_entities.TryAdd(entity.Id, entity) == false)
         {
             throw new ArgumentException("Object Already Registered");
         }
@@ -109,20 +117,50 @@ public sealed class Region : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_players.TryAdd(entity.Id, entity) == false)
+        if (_players.TryAdd(entity.Id, entity) == true)
         {
-            throw new ArgumentException("Player Already Registered");
+            entity.Parent?.Unregister(entity);
+            entity.Parent = this;
+            return;
         }
-
-        entity.Parent?.Unregister(entity);
-
-        entity.Parent = this;
     }
 
-    public void Save(GameEngine engine)
+    public static Region[] Seek(GameEngine engine, Expression<Func<Region, bool>> predicate)
     {
         ArgumentNullException.ThrowIfNull(engine);
+        return engine.Content.Seek(predicate);
+    }
 
-        engine.Content.Save(this);
+    public void Unregister(Mobile entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        if (_entities.TryRemove(entity.Id) == true)
+        {
+            entity.Parent = null;
+            return;
+        }
+    }
+
+    public void Unregister(Object entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        if (_entities.TryRemove(entity.Id) == true)
+        {
+            entity.Parent = null;
+            return;
+        }
+    }
+
+    public void Unregister(Player entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        if (_players.TryRemove(entity.Id) == true)
+        {
+            entity.Parent = null;
+            return;
+        }
     }
 }

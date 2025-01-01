@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Concurrent;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Genesis.Core;
@@ -70,5 +71,10 @@ public static class Extensions
     public static byte[] ToBytes(this string @this)
     {
         return string.IsNullOrWhiteSpace(@this) ? [] : Encoding.UTF8.GetBytes(@this);
+    }
+
+    public static bool TryRemove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> @this, TKey key) where TKey : notnull
+    {
+        return @this.TryRemove(key, out var _);
     }
 }
