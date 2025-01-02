@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Genesis.Core.Entities;
@@ -13,7 +12,7 @@ namespace Genesis.Core.Content;
 [JsonDerivedType(typeof(Object), typeDiscriminator: nameof(Object))]
 public abstract class Entity
 {
-    protected readonly ConcurrentDictionary<Guid, Entity> _entities = [];
+    private readonly HashSet<Entity> _internal = [];
     private readonly Dictionary<string, Dynamic> _properties = new(StringComparer.OrdinalIgnoreCase);
 
     public Entity(string name)
@@ -27,7 +26,7 @@ public abstract class Entity
 
     internal ICollection<Entity> Entities
     {
-        get => [.. _entities.Values.OfType<Entity>()];
+        get => [.. _internal.Where(x => x is not Player)];
         init => value.ForEach(Register);
     }
 
@@ -39,6 +38,7 @@ public abstract class Entity
     [JsonIgnore, NotMapped]
     public Entity? Parent { get; internal set; }
 
+    [JsonInclude]
     public Dictionary<string, Dynamic> Properties
     {
         internal get => _properties.ToDictionary(x => x.Key, x => x.Value);
@@ -51,33 +51,38 @@ public abstract class Entity
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    private void Register(Entity entity)
+    protected virtual Entity? FindMember(string keyword, ref int index) => null;
+
+    internal void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryAdd(entity.Id, entity) == false)
+        if (_internal.Add(entity) == true)
         {
-            throw new ArgumentException("Entity Already Registered");
+            entity.Parent?.Unregister(entity);
+
+            entity.Parent = this;
         }
-
-        entity.Parent?.Unregister(entity);
-
-        entity.Parent = this;
     }
 
-    protected virtual Entity? FindMember(string keyword, ref int index) => null;
-
-    protected virtual void LoadMembers(GameEngine engine)
+    internal void Unregister(Entity entity)
     {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        if (_internal.Remove(entity) == true)
+        {
+            entity.Parent = null;
+        }
     }
 
-    protected virtual void UnloadMembers(GameEngine engine)
+    public bool Equals(Entity? other)
     {
+        return other != null && Id == other.Id;
     }
 
-    internal virtual void Unregister(Entity entity)
+    public override bool Equals(object? obj)
     {
-        throw new NotSupportedException("Entity Not Supported");
+        return Equals(obj as Entity);
     }
 
     public Entity? FindMember(string keyword, int index = 0)
@@ -85,7 +90,9 @@ public abstract class Entity
         return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
     }
 
-    public virtual void Load(GameEngine engine)
+    public override int GetHashCode() => Id.GetHashCode();
+
+    public void Load(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
@@ -101,5 +108,7 @@ public abstract class Entity
         Entities.ForEach(x => x.Unload(engine));
 
         engine.Content.Unregister(this);
+
+        Parent?.Unregister(this);
     }
 }

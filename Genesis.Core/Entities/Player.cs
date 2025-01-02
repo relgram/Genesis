@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq.Expressions;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
@@ -15,14 +13,14 @@ public sealed class Player : Entity
     [NotMapped]
     public ICollection<Effect> Effects
     {
-        get => [.. _entities.Values.OfType<Effect>()];
+        get => [.. Entities.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Object> Objects
     {
-        get => [.. _entities.Values.OfType<Object>()];
+        get => [.. Entities.OfType<Object>()];
         init => value.ForEach(Register);
     }
 
@@ -39,34 +37,19 @@ public sealed class Player : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryAdd(entity.Id, entity) == false)
-        {
-            throw new ArgumentException("Effect Already Registered");
-        }
-
-        entity.Parent?.Unregister(entity);
-
-        entity.Parent = this;
+        base.Register(entity);
     }
 
     public void Register(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryAdd(entity.Id, entity) == false)
-        {
-            throw new ArgumentException("Object Already Registered");
-        }
-
-        entity.Parent?.Unregister(entity);
-
-        entity.Parent = this;
+        base.Register(entity);
     }
 
-    public static Player[] Seek(GameEngine engine, Expression<Func<Player, bool>> predicate)
+    public static Player? SearchByName(GameEngine engine, string name)
     {
-        ArgumentNullException.ThrowIfNull(engine);
-        return engine.Content.Seek(predicate);
+        return engine.Content.Search<Player>(x => x.Name == name).FirstOrDefault();
     }
 
     public override void Unload(GameEngine engine)
@@ -82,21 +65,13 @@ public sealed class Player : Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryRemove(entity.Id) == true)
-        {
-            entity.Parent = null;
-            return;
-        }
+        base.Unregister(entity);
     }
 
     public void Unregister(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryRemove(entity.Id) == true)
-        {
-            entity.Parent = null;
-            return;
-        }
+        base.Unregister(entity);
     }
 }

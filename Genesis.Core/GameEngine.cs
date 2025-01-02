@@ -17,8 +17,6 @@ public sealed class GameEngine
 
     public Runtime.Manager Runtime { get; }
 
-    public bool IsRunning { get; private set; }
-
     public void Start(CancellationToken cancellationToken)
     {
         Runtime.Start(this, cancellationToken);

@@ -14,70 +14,28 @@ public sealed class Object : Entity
     [NotMapped]
     public ICollection<Effect> Effects
     {
-        get => [.. _entities.Values.OfType<Effect>()];
+        get => [.. Entities.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Object> Objects
     {
-        get => [.. _entities.Values.OfType<Object>()];
+        get => [.. Entities.OfType<Object>()];
         init => value.ForEach(Register);
-    }
-
-    public void Register(Effect entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        if (_entities.TryAdd(entity.Id, entity) == false)
-        {
-            throw new ArgumentException("Effect Already Registered");
-        }
-
-        entity.Parent?.Unregister(entity);
-
-        entity.Parent = this;
     }
 
     public void Register(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryAdd(entity.Id, entity) == false)
-        {
-            throw new ArgumentException("Object Already Registered");
-        }
-
-        entity.Parent?.Unregister(entity);
-
-        entity.Parent = this;
-    }
-
-    public void Unregister(Effect entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        if (_entities.TryRemove(entity.Id) == false)
-        {
-            throw new ArgumentException("Effect Not Registered");
-        }
-
-        entity.Parent = null;
-
-        return;
+        base.Register(entity);
     }
 
     public void Unregister(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_entities.TryRemove(entity.Id) == false)
-        {
-            throw new ArgumentException("Object Not Registered");
-        }
-
-        entity.Parent = null;
-
-        return;
+        base.Unregister(entity);
     }
 }

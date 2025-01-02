@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Linq.Expressions;
-using System.Numerics;
 using Genesis.Core.Content.Database;
 using Genesis.Core.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -43,7 +42,7 @@ public sealed class Manager
         }
     }
 
-    internal T[] Seek<T>(Expression<Func<T, bool>> predicate) where T : Entity
+    internal T[] Search<T>(Expression<Func<T, bool>> predicate) where T : Entity
     {
         using var context = _contextFactory.CreateDbContext();
         return [.. context.Set<T>().AsNoTracking().Where(predicate)];
@@ -57,7 +56,7 @@ public sealed class Manager
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(i => _updateTimers[i] = new(engine));
 
-        Parallel.ForEach(Seek<Region>(x => true), x => x.Load(engine));
+        Parallel.ForEach(Search<Region>(x => true), x => x.Load(engine));
 
         _logger.LogInformation("Content Manager Started");
     }
