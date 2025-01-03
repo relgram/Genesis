@@ -12,7 +12,7 @@ namespace Genesis.Core.Content;
 [JsonDerivedType(typeof(Object), typeDiscriminator: nameof(Object))]
 public abstract class Entity
 {
-    private readonly HashSet<Entity> _internal = [];
+    protected readonly HashSet<Entity> _members = [];
     private readonly Dictionary<string, Dynamic> _properties = new(StringComparer.OrdinalIgnoreCase);
 
     public Entity(string name)
@@ -26,7 +26,7 @@ public abstract class Entity
 
     internal ICollection<Entity> Entities
     {
-        get => [.. _internal.Where(x => x is not Player)];
+        get => [.. _members.Where(x => x is not Player)];
         init => value.ForEach(Register);
     }
 
@@ -57,7 +57,7 @@ public abstract class Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_internal.Add(entity) == true)
+        if (_members.Add(entity) == true)
         {
             entity.Parent?.Unregister(entity);
 
@@ -69,7 +69,7 @@ public abstract class Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_internal.Remove(entity) == true)
+        if (_members.Remove(entity) == true)
         {
             entity.Parent = null;
         }
@@ -108,7 +108,5 @@ public abstract class Entity
         Entities.ForEach(x => x.Unload(engine));
 
         engine.Content.Unregister(this);
-
-        Parent?.Unregister(this);
     }
 }

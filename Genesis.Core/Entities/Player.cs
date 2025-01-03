@@ -13,14 +13,14 @@ public sealed class Player : Entity
     [NotMapped]
     public ICollection<Effect> Effects
     {
-        get => [.. Entities.OfType<Effect>()];
+        get => [.. _members.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Object> Objects
     {
-        get => [.. Entities.OfType<Object>()];
+        get => [.. _members.OfType<Object>()];
         init => value.ForEach(Register);
     }
 

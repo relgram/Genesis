@@ -6,6 +6,8 @@ namespace Genesis.Core.Entities;
 [Table(nameof(Region))]
 public sealed class Region : Entity
 {
+    private readonly HashSet<Player> _players = [];
+
     public Region(string name) : base(name)
     {
     }
@@ -13,28 +15,28 @@ public sealed class Region : Entity
     [NotMapped]
     public ICollection<Effect> Effects
     {
-        get => [.. Entities.OfType<Effect>()];
+        get => [.. _members.OfType<Effect>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Mobile> Mobiles
     {
-        get => [.. Entities.OfType<Mobile>()];
+        get => [.. _members.OfType<Mobile>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Object> Objects
     {
-        get => [.. Entities.OfType<Object>()];
+        get => [.. _members.OfType<Object>()];
         init => value.ForEach(Register);
     }
 
     [NotMapped]
     public ICollection<Player> Players
     {
-        get => [.. Entities.OfType<Player>()];
+        get => [.. _members.OfType<Player>()];
     }
 
     protected override Entity? FindMember(string keyword, ref int index)
@@ -48,6 +50,20 @@ public sealed class Region : Entity
         if (Players.Find(x => IsMatch(x.Name, keyword), ref index) is Player player) return player;
 
         return null;
+    }
+
+    public void Register(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Register(entity);
+    }
+
+    public void Register(Mobile entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Register(entity);
     }
 
     public void Register(Object entity)
@@ -71,6 +87,20 @@ public sealed class Region : Entity
         engine.Content.Save(this);
 
         base.Unload(engine);
+    }
+
+    public void Unregister(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Unregister(entity);
+    }
+
+    public void Unregister(Mobile entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Unregister(entity);
     }
 
     public void Unregister(Object entity)

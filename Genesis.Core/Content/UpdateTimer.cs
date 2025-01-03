@@ -21,7 +21,7 @@ internal sealed class UpdateTimer : IDisposable
         {
             foreach (var entity in _entities.Values)
             {
-                _engine.Runtime.DoProcedure(_engine, "Update", "DoUpdate", entity);
+                _engine.Runtime.DoProcedure(_engine, "Update", "OnUpdate", entity);
             }
         }
     }

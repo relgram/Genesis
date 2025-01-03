@@ -137,6 +137,8 @@ public sealed class Client
 
             message = $"<color red>{message}</color>";
 
+            Entity?.Parent?.Unregister(Entity);
+
             SendBytes(message.ToBytes());
 
             Entity?.Unload(engine);
