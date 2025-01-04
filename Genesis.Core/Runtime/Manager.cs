@@ -1,5 +1,6 @@
 ﻿using System.Runtime.Loader;
 using System.Text;
+using System.Xml.Linq;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -18,31 +19,6 @@ public sealed class Manager
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _libraryPath = configuration["Genesis:LibraryPath"] ?? throw new Exception("LibraryPath not defined");
-    }
-
-    public void DoAction(GameEngine engine, string name, string method, params object[] args)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        ArgumentException.ThrowIfNullOrEmpty(name);
-        ArgumentException.ThrowIfNullOrEmpty(method);
-
-        try
-        {
-            lock (_internalLock)
-            {
-                if (_actions.ContainsKey(name) == true)
-                {
-                    if (_actions[name].Execute(engine, method, args) == true)
-                    {
-                        return;
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Action failed unexpectedly");
-        }
     }
 
     public void DoAction(GameEngine engine, Content.Entity entity, string message)
@@ -66,7 +42,7 @@ public sealed class Manager
                 {
                     if (_actions[name].Execute(engine, entity, message) == false)
                     {
-                        entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you were referring to.\n>\n"));
+                        entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\n>\n"));
                     }
 
                     return;
@@ -80,7 +56,7 @@ public sealed class Manager
                         {
                             if (item.Value.Execute(engine, entity, message) == false)
                             {
-                                entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you were referring to.\r\n>"));
+                                entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\r\n>"));
                             }
 
                             return;
@@ -197,7 +173,9 @@ public sealed class Manager
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Starting Runtime Manager...");
+
         LoadLibrary();
+
         _logger.LogInformation("Runtime Manager Started");
     }
 
@@ -206,8 +184,13 @@ public sealed class Manager
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Stopping Runtime Manager...");
-        _actions.Clear();
-        _procedures.Clear();
+
+        lock (_internalLock)
+        {
+            _actions.Clear();
+            _procedures.Clear();
+        }
+
         _logger.LogInformation("Runtime Manager Stopped");
     }
 }

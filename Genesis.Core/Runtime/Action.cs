@@ -18,9 +18,4 @@ public abstract class Action
     /// Executes static member of action matching parsed arguments from message.
     /// </summary>
     public abstract bool Execute(GameEngine engine, Entity sender, string message);
-
-    /// <summary>
-    /// Executes static member of action matching provided method and arguments.
-    /// </summary>
-    public abstract bool Execute(GameEngine engine, string method, params object[] args);
 }

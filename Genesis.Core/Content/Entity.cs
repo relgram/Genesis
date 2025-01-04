@@ -39,16 +39,16 @@ public abstract class Entity
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    public bool Equals(Entity? other)
-    {
-        return other is not null && Id == other.Id;
-    }
+    public bool Equals(Entity? other) => other is not null && Id == other.Id;
 
     public override bool Equals(object? obj) => Equals(obj as Entity);
 
-    public Entity? FindMember(string keyword, int index = 0)
+    /// <summary>
+    /// Locate registered entity with specified keyword and optional predicate.
+    /// </summary>
+    public Entity? FindMember(string keyword, int index = 0, Func<Entity, bool>? predicate = null)
     {
-        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
+        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index, predicate);
     }
 
     public override int GetHashCode() => Id.GetHashCode();
@@ -99,8 +99,6 @@ public abstract class Entity
         }
     }
 
-    protected virtual Entity? FindMember(string keyword, ref int index) => null;
-
     protected virtual void LoadMembers(GameEngine engine)
     {
         // intentionally left blank
@@ -109,5 +107,12 @@ public abstract class Entity
     protected virtual void UnloadMembers(GameEngine engine)
     {
         // intentionally left blank
+    }
+
+    private Entity? FindMember(string keyword, ref int index, Func<Entity, bool>? predicate = null)
+    {
+        //static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
+
+        return Entities.Find(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) && (predicate is null || predicate(x)), ref index);
     }
 }

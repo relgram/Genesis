@@ -59,18 +59,6 @@ public sealed class Player : Entity
         base.Unregister(entity);
     }
 
-    protected override Entity? FindMember(string keyword, ref int index)
-    {
-        static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
-
-        if (Objects.Find(x => IsMatch(x.Name, keyword), ref index) is Object @object)
-        {
-            return @object;
-        }
-
-        return null;
-    }
-
     protected override void LoadMembers(GameEngine engine)
     {
         Effects.ForEach(x => x.Load(engine));

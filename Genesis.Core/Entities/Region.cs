@@ -34,6 +34,12 @@ public sealed class Region : Entity
         get => [.. Entities.OfType<Player>()];
     }
 
+    public ICollection<Portal> Portals
+    {
+        get => [.. Entities.OfType<Portal>()];
+        init => value.ForEach(Register);
+    }
+
     public void Register(Effect entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
@@ -49,6 +55,13 @@ public sealed class Region : Entity
     }
 
     public void Register(Player entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Register(entity);
+    }
+
+    public void Register(Portal entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -85,21 +98,11 @@ public sealed class Region : Entity
         base.Unregister(entity);
     }
 
-    protected override Entity? FindMember(string keyword, ref int index)
+    public void Unregister(Portal entity)
     {
-        static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
+        ArgumentNullException.ThrowIfNull(entity);
 
-        if (Objects.Find(x => IsMatch(x.Name, keyword), ref index) is Object @object)
-        {
-            return @object;
-        }
-
-        if (Players.Find(x => IsMatch(x.Name, keyword), ref index) is Player player)
-        {
-            return player;
-        }
-
-        return null;
+        base.Unregister(entity);
     }
 
     protected override void LoadMembers(GameEngine engine)
@@ -107,6 +110,7 @@ public sealed class Region : Entity
         Effects.ForEach(x => x.Load(engine));
         Mobiles.ForEach(x => x.Load(engine));
         Objects.ForEach(x => x.Load(engine));
+        Portals.ForEach(x => x.Load(engine));
     }
 
     protected override void UnloadMembers(GameEngine engine)
@@ -114,5 +118,6 @@ public sealed class Region : Entity
         Effects.ForEach(x => x.Unload(engine));
         Mobiles.ForEach(x => x.Unload(engine));
         Objects.ForEach(x => x.Unload(engine));
+        Portals.ForEach(x => x.Unload(engine));
     }
 }

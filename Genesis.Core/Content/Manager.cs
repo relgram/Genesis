@@ -2,7 +2,6 @@
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Object = Genesis.Core.Entities.Object;
 
 namespace Genesis.Core.Content;
 
@@ -12,10 +11,7 @@ public sealed class Manager
 
     private readonly string _contentPath;
 
-    private readonly Dictionary<Type, Dictionary<Guid, Entity>> _entities = new()
-    {
-        { typeof(Effect), [] }, { typeof(Object), [] }, { typeof(Player), [] }, { typeof(Region), [] },
-    };
+    private readonly Dictionary<Type, Dictionary<Guid, Entity>> _entities = new();
 
     private readonly ILogger<Manager> _logger;
 
@@ -25,6 +21,14 @@ public sealed class Manager
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _contentPath = configuration["Genesis:ContentPath"] ?? throw new Exception("ContentPath not defined");
+
+        foreach (var type in typeof(Entity).Assembly.GetTypes().Where(x => x.IsAbstract is false))
+        {
+            if (type.IsAssignableTo(typeof(Entity)) is true)
+            {
+                _entities[type] = [];
+            }
+        }
     }
 
     /// <summary>
