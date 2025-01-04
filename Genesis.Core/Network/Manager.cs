@@ -12,43 +12,10 @@ public sealed class Manager
     private readonly ILoggerFactory _loggerFactory;
     private readonly TcpListener _tcpListener = new(IPAddress.Any, 4000);
 
-    public Manager(ILogger<Manager> logger, ILoggerFactory loggerFmobiley)
+    public Manager(ILogger<Manager> logger, ILoggerFactory loggerFactory)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _loggerFactory = loggerFmobiley ?? throw new ArgumentNullException(nameof(loggerFmobiley));
-    }
-
-    private async Task AcceptSocketAsync(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        try
-        {
-            ILogger<Client> logger = _loggerFactory.CreateLogger<Client>();
-
-            var socket = await _tcpListener.AcceptSocketAsync();
-
-            Client client = new(logger, socket);
-
-            client.Start(engine);
-        }
-        catch (Exception ex)
-        {
-            if (ex is not SocketException)
-            {
-                _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
-            }
-        }
-        finally
-        {
-            if (_tcpListener.Server.IsBound)
-            {
-                AcceptSocketAsync(engine).FireAndForget(ex =>
-                {
-                    _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
-                });
-            }
-        }
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
     }
 
     internal void Register(Client client)
@@ -104,6 +71,39 @@ public sealed class Manager
         if (_clients.TryRemove(client.Id, out _) == false)
         {
             throw new ArgumentException($"Failed to unregister client: {client.Address}");
+        }
+    }
+
+    private async Task AcceptSocketAsync(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        try
+        {
+            ILogger<Client> logger = _loggerFactory.CreateLogger<Client>();
+
+            var socket = await _tcpListener.AcceptSocketAsync();
+
+            Client client = new(logger, socket);
+
+            client.Start(engine);
+        }
+        catch (Exception ex)
+        {
+            if (ex is not SocketException)
+            {
+                _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
+            }
+        }
+        finally
+        {
+            if (_tcpListener.Server.IsBound)
+            {
+                AcceptSocketAsync(engine).FireAndForget(ex =>
+                {
+                    _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
+                });
+            }
         }
     }
 }

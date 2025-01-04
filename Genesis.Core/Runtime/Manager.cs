@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.Loader;
+﻿using System.Runtime.Loader;
 using System.Text;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
@@ -19,25 +18,6 @@ public sealed class Manager
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _libraryPath = configuration["Genesis:LibraryPath"] ?? throw new Exception("LibraryPath not defined");
-    }
-
-    internal void Start(GameEngine engine, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        cancellationToken.ThrowIfCancellationRequested();
-        _logger.LogInformation("Starting Runtime Manager...");
-        LoadLibrary();
-        _logger.LogInformation("Runtime Manager Started");
-    }
-
-    internal void Stop(GameEngine engine, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        cancellationToken.ThrowIfCancellationRequested();
-        _logger.LogInformation("Stopping Runtime Manager...");
-        _actions.Clear();
-        _procedures.Clear();
-        _logger.LogInformation("Runtime Manager Stopped");
     }
 
     public void DoAction(GameEngine engine, string name, string method, params object[] args)
@@ -210,5 +190,25 @@ public sealed class Manager
 
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"LoadGameplay failed unexpectedly:{ex.Message}"));
         }
+    }
+
+    internal void Start(GameEngine engine, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        cancellationToken.ThrowIfCancellationRequested();
+        _logger.LogInformation("Starting Runtime Manager...");
+
+        // LoadLibrary();
+        _logger.LogInformation("Runtime Manager Started");
+    }
+
+    internal void Stop(GameEngine engine, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        cancellationToken.ThrowIfCancellationRequested();
+        _logger.LogInformation("Stopping Runtime Manager...");
+        _actions.Clear();
+        _procedures.Clear();
+        _logger.LogInformation("Runtime Manager Stopped");
     }
 }

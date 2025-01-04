@@ -40,6 +40,85 @@ public sealed class Client
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
+    public void Disconnect(GameEngine engine, string message = "Disconnected")
+    {
+        try
+        {
+            if (Entity is Player player)
+            {
+                engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", player);
+            }
+
+            message = $"<color red>{message}</color>";
+
+            Entity?.Parent?.Unregister(Entity);
+
+            SendBytes(message.ToBytes());
+
+            Entity?.Unload(engine);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Disconnect failed unexpectedly");
+        }
+        finally
+        {
+            _socket.Shutdown(SocketShutdown.Both);
+
+            engine.Network.Unregister(this);
+
+            _socket.Close(CLOSE_TIMEOUT);
+
+            _keepAlive.Dispose();
+
+            Entity = null;
+        }
+    }
+
+    public void SendBytes(byte[] bytes)
+    {
+        if (_socket.Connected == true)
+        {
+            _socket.SendAsync(bytes).FireAndForget(ex =>
+            {
+                _logger.LogWarning(ex, "SendBytes failed unexpectedly");
+            });
+        }
+    }
+
+    public void SetEntity(GameEngine engine, Entity entity)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(entity);
+
+        Procedure = string.Empty;
+        entity.Client = this;
+        Entity = entity;
+    }
+
+    internal void Start(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        try
+        {
+            engine.Network.Register(this);
+
+            ReceiveAsync(engine).FireAndForget(ex =>
+            {
+                Disconnect(engine, "ReceiveAsync failed unexpectedly");
+            });
+
+            engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this);
+        }
+        catch (Exception ex)
+        {
+            Disconnect(engine, "Disconnected");
+
+            _logger.LogWarning(ex, "Start failed unexpectedly");
+        }
+    }
+
     private void KeepAlive(object? state = null)
     {
         SendBytes([0x0]);
@@ -101,84 +180,5 @@ public sealed class Client
 
             ProcessMessage(engine, string.Join(' ', message[0].Split(' ', StringSplitOptions.RemoveEmptyEntries)));
         }
-    }
-
-    internal void Start(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        try
-        {
-            engine.Network.Register(this);
-
-            ReceiveAsync(engine).FireAndForget(ex =>
-            {
-                Disconnect(engine, "ReceiveAsync failed unexpectedly");
-            });
-
-            engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this);
-        }
-        catch (Exception ex)
-        {
-            Disconnect(engine, "Disconnected");
-
-            _logger.LogWarning(ex, "Start failed unexpectedly");
-        }
-    }
-
-    public void Disconnect(GameEngine engine, string message = "Disconnected")
-    {
-        try
-        {
-            if (Entity is Player player)
-            {
-                engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", player);
-            }
-
-            message = $"<color red>{message}</color>";
-
-            Entity?.Parent?.Unregister(Entity);
-
-            SendBytes(message.ToBytes());
-
-            Entity?.Unload(engine);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Disconnect failed unexpectedly");
-        }
-        finally
-        {
-            _socket.Shutdown(SocketShutdown.Both);
-
-            engine.Network.Unregister(this);
-
-            _socket.Close(CLOSE_TIMEOUT);
-
-            _keepAlive.Dispose();
-
-            Entity = null;
-        }
-    }
-
-    public void SendBytes(byte[] bytes)
-    {
-        if (_socket.Connected == true)
-        {
-            _socket.SendAsync(bytes).FireAndForget(ex =>
-            {
-                _logger.LogWarning(ex, "SendBytes failed unexpectedly");
-            });
-        }
-    }
-
-    public void SetEntity(GameEngine engine, Entity entity)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(entity);
-
-        Procedure = string.Empty;
-        entity.Client = this;
-        Entity = entity;
     }
 }

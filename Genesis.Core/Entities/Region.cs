@@ -1,69 +1,24 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Text.Json.Serialization;
 using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
-[Table(nameof(Region))]
 public sealed class Region : Entity
 {
-    private readonly HashSet<Player> _players = [];
-
+    [JsonConstructor]
     public Region(string name) : base(name)
     {
     }
 
-    [NotMapped]
-    public ICollection<Effect> Effects
-    {
-        get => [.. _members.OfType<Effect>()];
-        init => value.ForEach(Register);
-    }
-
-    [NotMapped]
-    public ICollection<Mobile> Mobiles
-    {
-        get => [.. _members.OfType<Mobile>()];
-        init => value.ForEach(Register);
-    }
-
-    [NotMapped]
     public ICollection<Object> Objects
     {
-        get => [.. _members.OfType<Object>()];
+        get => [.. Entities.OfType<Object>()];
         init => value.ForEach(Register);
     }
 
-    [NotMapped]
     public ICollection<Player> Players
     {
-        get => [.. _members.OfType<Player>()];
-    }
-
-    protected override Entity? FindMember(string keyword, ref int index)
-    {
-        static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
-
-        if (Objects.Find(x => IsMatch(x.Name, keyword), ref index) is Object @object) return @object;
-
-        if (Mobiles.Find(x => IsMatch(x.Name, keyword), ref index) is Mobile mobile) return mobile;
-
-        if (Players.Find(x => IsMatch(x.Name, keyword), ref index) is Player player) return player;
-
-        return null;
-    }
-
-    public void Register(Effect entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        base.Register(entity);
-    }
-
-    public void Register(Mobile entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        base.Register(entity);
+        get => [.. Entities.OfType<Player>()];
     }
 
     public void Register(Object entity)
@@ -80,29 +35,6 @@ public sealed class Region : Entity
         base.Register(entity);
     }
 
-    public override void Unload(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        engine.Content.Save(this);
-
-        base.Unload(engine);
-    }
-
-    public void Unregister(Effect entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        base.Unregister(entity);
-    }
-
-    public void Unregister(Mobile entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        base.Unregister(entity);
-    }
-
     public void Unregister(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
@@ -115,5 +47,32 @@ public sealed class Region : Entity
         ArgumentNullException.ThrowIfNull(entity);
 
         base.Unregister(entity);
+    }
+
+    protected override Entity? FindMember(string keyword, ref int index)
+    {
+        static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
+
+        if (Objects.Find(x => IsMatch(x.Name, keyword), ref index) is Object @object)
+        {
+            return @object;
+        }
+
+        if (Players.Find(x => IsMatch(x.Name, keyword), ref index) is Player player)
+        {
+            return player;
+        }
+
+        return null;
+    }
+
+    protected override void LoadMembers(GameEngine engine)
+    {
+        Objects.ForEach(x => x.Load(engine));
+    }
+
+    protected override void UnloadMembers(GameEngine engine)
+    {
+        Objects.ForEach(x => x.Unload(engine));
     }
 }

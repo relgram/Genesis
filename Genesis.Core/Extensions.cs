@@ -42,7 +42,14 @@ public static class Extensions
 
         async static Task ForgetAwaited(Task task, Action<Exception>? callback = null)
         {
-            try { await task.ConfigureAwait(false); } catch (Exception ex) { callback?.Invoke(ex); }
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                callback?.Invoke(ex);
+            }
         }
     }
 
@@ -71,10 +78,5 @@ public static class Extensions
     public static byte[] ToBytes(this string @this)
     {
         return string.IsNullOrWhiteSpace(@this) ? [] : Encoding.UTF8.GetBytes(@this);
-    }
-
-    public static bool TryRemove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> @this, TKey key) where TKey : notnull
-    {
-        return @this.TryRemove(key, out var _);
     }
 }

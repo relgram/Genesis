@@ -1,41 +1,26 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
-using Genesis.Core.Entities;
+﻿using System.Text.Json.Serialization;
 using Genesis.Core.Network;
-using Object = Genesis.Core.Entities.Object;
 
 namespace Genesis.Core.Content;
 
-[JsonDerivedType(typeof(Effect), typeDiscriminator: nameof(Effect))]
-[JsonDerivedType(typeof(Mobile), typeDiscriminator: nameof(Mobile))]
-[JsonDerivedType(typeof(Object), typeDiscriminator: nameof(Object))]
 public abstract class Entity
 {
-    protected readonly HashSet<Entity> _members = [];
     private readonly Dictionary<string, Dynamic> _properties = new(StringComparer.OrdinalIgnoreCase);
 
+    [JsonConstructor]
     public Entity(string name)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
     }
 
-    [NotMapped]
     [JsonIgnore]
     public Client? Client { get; internal set; }
 
-    internal ICollection<Entity> Entities
-    {
-        get => [.. _members.Where(x => x is not Player)];
-        init => value.ForEach(Register);
-    }
-
-    [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid Id { get; init; } = Guid.NewGuid();
 
     public string Name { get; set; }
 
-    [JsonIgnore, NotMapped]
+    [JsonIgnore]
     public Entity? Parent { get; internal set; }
 
     [JsonInclude]
@@ -45,19 +30,58 @@ public abstract class Entity
         init => value.ForEach(x => _properties[x.Key] = x.Value);
     }
 
+    [JsonIgnore]
+    protected HashSet<Entity> Entities { get; } = [];
+
     public Dynamic this[string key]
     {
         get => _properties.GetValueOrDefault(key, Dynamic.Empty);
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    protected virtual Entity? FindMember(string keyword, ref int index) => null;
+    public bool Equals(Entity? other)
+    {
+        return other is not null && Id == other.Id;
+    }
+
+    public override bool Equals(object? obj) => Equals(obj as Entity);
+
+    public Entity? FindMember(string keyword, int index = 0)
+    {
+        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
+    }
+
+    public override int GetHashCode() => Id.GetHashCode();
+
+    /// <summary>
+    /// Load entity into running game instance.
+    /// </summary>
+    public void Load(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        engine.Content.Register(this);
+
+        LoadMembers(engine);
+    }
+
+    /// <summary>
+    /// Unload entity from running game instance.
+    /// </summary>
+    public void Unload(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        UnloadMembers(engine);
+
+        engine.Content.Unregister(this);
+    }
 
     internal void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_members.Add(entity) == true)
+        if (Entities.Add(entity) == true)
         {
             entity.Parent?.Unregister(entity);
 
@@ -69,44 +93,21 @@ public abstract class Entity
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        if (_members.Remove(entity) == true)
+        if (Entities.Remove(entity) == true)
         {
             entity.Parent = null;
         }
     }
 
-    public bool Equals(Entity? other)
+    protected virtual Entity? FindMember(string keyword, ref int index) => null;
+
+    protected virtual void LoadMembers(GameEngine engine)
     {
-        return other != null && Id == other.Id;
+        // intentionally left blank
     }
 
-    public override bool Equals(object? obj)
+    protected virtual void UnloadMembers(GameEngine engine)
     {
-        return Equals(obj as Entity);
-    }
-
-    public Entity? FindMember(string keyword, int index = 0)
-    {
-        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index);
-    }
-
-    public override int GetHashCode() => Id.GetHashCode();
-
-    public void Load(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        engine.Content.Register(this);
-
-        Entities.ForEach(x => x.Load(engine));
-    }
-
-    public virtual void Unload(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        Entities.ForEach(x => x.Unload(engine));
-
-        engine.Content.Unregister(this);
+        // intentionally left blank
     }
 }
