@@ -22,6 +22,12 @@ public sealed class Region : Entity
         init => value.ForEach(Register);
     }
 
+    public ICollection<Mobile> Mobiles
+    {
+        get => [.. Entities.OfType<Mobile>()];
+        init => value.ForEach(Register);
+    }
+
     [JsonIgnore]
     public ICollection<Player> Players
     {
@@ -98,11 +104,15 @@ public sealed class Region : Entity
 
     protected override void LoadMembers(GameEngine engine)
     {
+        Effects.ForEach(x => x.Load(engine));
         Objects.ForEach(x => x.Load(engine));
+        Mobiles.ForEach(x => x.Load(engine));
     }
 
     protected override void UnloadMembers(GameEngine engine)
     {
+        Effects.ForEach(x => x.Unload(engine));
         Objects.ForEach(x => x.Unload(engine));
+        Mobiles.ForEach(x => x.Unload(engine));
     }
 }

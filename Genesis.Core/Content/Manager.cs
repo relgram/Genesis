@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -15,7 +14,7 @@ public sealed class Manager
 
     private readonly Dictionary<Type, Dictionary<Guid, Entity>> _entities = new()
     {
-        { typeof(Object), [] }, { typeof(Player), [] }, { typeof(Region), [] },
+        { typeof(Effect), [] }, { typeof(Object), [] }, { typeof(Player), [] }, { typeof(Region), [] },
     };
 
     private readonly ILogger<Manager> _logger;
@@ -45,13 +44,30 @@ public sealed class Manager
     }
 
     /// <summary>
+    /// Returns true if player exists with specified name.
+    /// </summary>
+    public bool PlayerExists(string name)
+    {
+        return File.Exists(Path.Join(_contentPath, "Players", $"{name}.json"));
+    }
+
+    /// <summary>
+    /// Returns object if player exists with specified name.
+    /// </summary>
+    public Player? PlayerSearch(string name)
+    {
+        var path = Path.Join(_contentPath, "Players", $"{name}.json");
+        return File.Exists(path) ? JsonSerializer.Deserialize<Player>(File.ReadAllText(path)) : null;
+    }
+
+    /// <summary>
     /// Save provided Player to file system.
     /// </summary>
     public void SavePlayer(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
 
-        _logger.LogInformation($"Saving Player: {player.Name}");
+        _logger.LogInformation("Saving Player: {id}", player.Id);
 
         var path = Path.Join(_contentPath, "Players");
 
@@ -67,25 +83,13 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(region);
 
-        _logger.LogInformation($"Saving Region: {region.Id}");
+        _logger.LogInformation("Saving Region: {id}", region.Id);
 
         var path = Path.Join(_contentPath, "Regions");
 
         var contents = JsonSerializer.Serialize(region, OPTIONS);
 
         File.WriteAllText(Path.Join(path, $"{region.Id}.json"), contents);
-    }
-
-    public Player? SearchPlayer(string name)
-    {
-        var root = Path.Join(_contentPath, "Players");
-
-        foreach (string path in Directory.GetFiles(root, $"{name}.json"))
-        {
-            return JsonSerializer.Deserialize<Player>(File.ReadAllText(path));
-        }
-
-        return default;
     }
 
     internal void Register(Entity entity)

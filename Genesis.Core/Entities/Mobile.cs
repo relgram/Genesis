@@ -3,10 +3,10 @@ using Genesis.Core.Content;
 
 namespace Genesis.Core.Entities;
 
-public sealed class Player : Entity
+public sealed class Mobile : Entity
 {
     [JsonConstructor]
-    public Player(string name) : base(name)
+    public Mobile(string name) : base(name)
     {
     }
 
@@ -34,15 +34,6 @@ public sealed class Player : Entity
         ArgumentNullException.ThrowIfNull(entity);
 
         base.Register(entity);
-    }
-
-    public override void Unload(GameEngine engine)
-    {
-        ArgumentNullException.ThrowIfNull(engine);
-
-        engine.Content.SavePlayer(this);
-
-        base.Unload(engine);
     }
 
     public void Unregister(Effect entity)
