@@ -10,10 +10,23 @@ public sealed class Object : Entity
     {
     }
 
+    public ICollection<Effect> Effects
+    {
+        get => [.. Entities.OfType<Effect>()];
+        init => value.ForEach(Register);
+    }
+
     public ICollection<Object> Objects
     {
         get => [.. Entities.OfType<Object>()];
         init => value.ForEach(Register);
+    }
+
+    public void Register(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Register(entity);
     }
 
     public void Register(Object entity)
@@ -21,6 +34,13 @@ public sealed class Object : Entity
         ArgumentNullException.ThrowIfNull(entity);
 
         base.Register(entity);
+    }
+
+    public void Unregister(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Unregister(entity);
     }
 
     public void Unregister(Object entity)

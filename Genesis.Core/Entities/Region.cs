@@ -10,6 +10,12 @@ public sealed class Region : Entity
     {
     }
 
+    public ICollection<Effect> Effects
+    {
+        get => [.. Entities.OfType<Effect>()];
+        init => value.ForEach(Register);
+    }
+
     public ICollection<Object> Objects
     {
         get => [.. Entities.OfType<Object>()];
@@ -20,6 +26,13 @@ public sealed class Region : Entity
     public ICollection<Player> Players
     {
         get => [.. Entities.OfType<Player>()];
+    }
+
+    public void Register(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Register(entity);
     }
 
     public void Register(Object entity)
@@ -43,6 +56,13 @@ public sealed class Region : Entity
         engine.Content.SaveRegion(this);
 
         base.Unload(engine);
+    }
+
+    public void Unregister(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Unregister(entity);
     }
 
     public void Unregister(Object entity)

@@ -10,10 +10,23 @@ public sealed class Player : Entity
     {
     }
 
+    public ICollection<Effect> Effects
+    {
+        get => [.. Entities.OfType<Effect>()];
+        init => value.ForEach(Register);
+    }
+
     public ICollection<Object> Objects
     {
         get => [.. Entities.OfType<Object>()];
         init => value.ForEach(Register);
+    }
+
+    public void Register(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Register(entity);
     }
 
     public void Register(Object entity)
@@ -30,6 +43,13 @@ public sealed class Player : Entity
         engine.Content.SavePlayer(this);
 
         base.Unload(engine);
+    }
+
+    public void Unregister(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Unregister(entity);
     }
 
     public void Unregister(Object entity)

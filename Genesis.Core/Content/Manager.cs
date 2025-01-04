@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.IO;
+using System.Text.Json;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -50,13 +51,13 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(player);
 
-        _logger.LogInformation($"Saving Player: {player.Id}");
+        _logger.LogInformation($"Saving Player: {player.Name}");
 
         var path = Path.Join(_contentPath, "Players");
 
         var contents = JsonSerializer.Serialize(player, OPTIONS);
 
-        File.WriteAllText(Path.Join(path, $"{player.Id}.json"), contents);
+        File.WriteAllText(Path.Join(path, $"{player.Name}.json"), contents);
     }
 
     /// <summary>
@@ -73,6 +74,18 @@ public sealed class Manager
         var contents = JsonSerializer.Serialize(region, OPTIONS);
 
         File.WriteAllText(Path.Join(path, $"{region.Id}.json"), contents);
+    }
+
+    public Player? SearchPlayer(string name)
+    {
+        var root = Path.Join(_contentPath, "Players");
+
+        foreach (string path in Directory.GetFiles(root, $"{name}.json"))
+        {
+            return JsonSerializer.Deserialize<Player>(File.ReadAllText(path));
+        }
+
+        return default;
     }
 
     internal void Register(Entity entity)

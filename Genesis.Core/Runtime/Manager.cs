@@ -197,8 +197,7 @@ public sealed class Manager
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Starting Runtime Manager...");
-
-        // LoadLibrary();
+        LoadLibrary();
         _logger.LogInformation("Runtime Manager Started");
     }
 
