@@ -16,6 +16,7 @@ public sealed class Region : Entity
         init => value.ForEach(Register);
     }
 
+    [JsonIgnore]
     public ICollection<Player> Players
     {
         get => [.. Entities.OfType<Player>()];
@@ -33,6 +34,15 @@ public sealed class Region : Entity
         ArgumentNullException.ThrowIfNull(entity);
 
         base.Register(entity);
+    }
+
+    public override void Unload(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        engine.Content.SaveRegion(this);
+
+        base.Unload(engine);
     }
 
     public void Unregister(Object entity)

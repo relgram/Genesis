@@ -23,6 +23,15 @@ public sealed class Player : Entity
         base.Register(entity);
     }
 
+    public override void Unload(GameEngine engine)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+
+        engine.Content.SavePlayer(this);
+
+        base.Unload(engine);
+    }
+
     public void Unregister(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);

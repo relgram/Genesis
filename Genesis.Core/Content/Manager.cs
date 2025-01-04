@@ -46,9 +46,11 @@ public sealed class Manager
     /// <summary>
     /// Save provided Player to file system.
     /// </summary>
-    public void Save(Player player)
+    public void SavePlayer(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
+
+        _logger.LogInformation($"Saving Player: {player.Id}");
 
         var path = Path.Join(_contentPath, "Players");
 
@@ -60,9 +62,11 @@ public sealed class Manager
     /// <summary>
     /// Save provided Region to file system.
     /// </summary>
-    public void Save(Region region)
+    public void SaveRegion(Region region)
     {
         ArgumentNullException.ThrowIfNull(region);
+
+        _logger.LogInformation($"Saving Region: {region.Id}");
 
         var path = Path.Join(_contentPath, "Regions");
 

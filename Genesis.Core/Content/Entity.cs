@@ -68,7 +68,7 @@ public abstract class Entity
     /// <summary>
     /// Unload entity from running game instance.
     /// </summary>
-    public void Unload(GameEngine engine)
+    public virtual void Unload(GameEngine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
