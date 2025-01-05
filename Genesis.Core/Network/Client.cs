@@ -46,7 +46,7 @@ public sealed class Client
         {
             if (Entity is Player player)
             {
-                engine.Runtime.DoProcedure(engine, "Logout", "DoLogout", player);
+                engine.Runtime.DoProcedure("Logout", "DoLogout", engine, player);
             }
 
             message = $"<color red>{message}</color>";
@@ -109,7 +109,7 @@ public sealed class Client
                 Disconnect(engine, "ReceiveAsync failed unexpectedly");
             });
 
-            engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this);
+            engine.Runtime.DoProcedure(Procedure, $"Do{Procedure}", engine, this);
         }
         catch (Exception ex)
         {
@@ -141,7 +141,7 @@ public sealed class Client
                 }
                 else
                 {
-                    engine.Runtime.DoProcedure(engine, Procedure, $"Do{Procedure}", this, message.Trim());
+                    engine.Runtime.DoProcedure(Procedure, $"Do{Procedure}", engine, this, message.Trim());
                 }
             }
         }

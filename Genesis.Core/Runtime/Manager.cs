@@ -73,9 +73,8 @@ public sealed class Manager
         }
     }
 
-    public bool DoProcedure(GameEngine engine, string name, string method, params object[] args)
+    public bool DoProcedure(string name, string method, params object[] args)
     {
-        ArgumentNullException.ThrowIfNull(engine);
         ArgumentException.ThrowIfNullOrEmpty(name);
         ArgumentException.ThrowIfNullOrEmpty(method);
 
@@ -85,7 +84,7 @@ public sealed class Manager
             {
                 if (_procedures.ContainsKey(name) == true)
                 {
-                    if (_procedures[name].Execute(engine, method, args) == true)
+                    if (_procedures[name].Execute(method, args) == true)
                     {
                         return true;
                     }

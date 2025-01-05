@@ -10,5 +10,5 @@ public abstract class Procedure
     /// <summary>
     /// Executes static member of procedure matching provided method and arguments.
     /// </summary>
-    public abstract bool Execute(GameEngine engine, string method, params object[] args);
+    public abstract bool Execute(string method, params object[] args);
 }

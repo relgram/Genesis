@@ -47,6 +47,13 @@ public sealed class Region : Entity
         base.Register(entity);
     }
 
+    public void Register(Mobile entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Register(entity);
+    }
+
     public void Register(Object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
@@ -78,6 +85,13 @@ public sealed class Region : Entity
     }
 
     public void Unregister(Effect entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        base.Unregister(entity);
+    }
+
+    public void Unregister(Mobile entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
