@@ -111,8 +111,6 @@ public abstract class Entity
 
     private Entity? FindMember(string keyword, ref int index, Func<Entity, bool>? predicate = null)
     {
-        //static bool IsMatch(string name, string value) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(x => x.StartsWith(value, true, null));
-
         return Entities.Find(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) && (predicate is null || predicate(x)), ref index);
     }
 }

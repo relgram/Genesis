@@ -11,7 +11,7 @@ public sealed class Manager
 
     private readonly string _contentPath;
 
-    private readonly Dictionary<Type, Dictionary<Guid, Entity>> _entities = new();
+    private readonly Dictionary<Type, Dictionary<Guid, Entity>> _entities = [];
 
     private readonly ILogger<Manager> _logger;
 
