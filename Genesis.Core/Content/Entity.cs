@@ -44,11 +44,11 @@ public abstract class Entity
     public override bool Equals(object? obj) => Equals(obj as Entity);
 
     /// <summary>
-    /// Locate registered entity with specified keyword and optional predicate.
+    /// Locate registered entity with specified keyword, optional filtering predicate and optional ordering.
     /// </summary>
-    public Entity? FindMember(string keyword, int index = 0, Func<Entity, bool>? predicate = null)
+    public Entity? FindMember(string keyword, int index = 0, Func<Entity, bool>? predicate = null, Func<Entity, bool>? order = null)
     {
-        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index, predicate);
+        return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index, predicate, order);
     }
 
     public override int GetHashCode() => Id.GetHashCode();
@@ -109,8 +109,8 @@ public abstract class Entity
         // intentionally left blank
     }
 
-    private Entity? FindMember(string keyword, ref int index, Func<Entity, bool>? predicate = null)
+    private Entity? FindMember(string keyword, ref int index, Func<Entity, bool>? predicate = null, Func<Entity, bool>? order = null)
     {
-        return Entities.Find(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) && (predicate is null || predicate(x)), ref index);
+        return Entities.OrderByDescending(x => order is null || order(x)).Find(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) && (predicate is null || predicate(x)), ref index);
     }
 }
