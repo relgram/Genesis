@@ -30,7 +30,7 @@ public sealed class Manager
         }
     }
 
-    internal void Start(GameEngine engine, CancellationToken cancellationToken)
+    internal void Start(Engine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
@@ -46,7 +46,7 @@ public sealed class Manager
         _logger.LogInformation("Network Manager Started");
     }
 
-    internal void Stop(GameEngine engine, CancellationToken cancellationToken)
+    internal void Stop(Engine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
@@ -74,7 +74,7 @@ public sealed class Manager
         }
     }
 
-    private async Task AcceptSocketAsync(GameEngine engine)
+    private async Task AcceptSocketAsync(Engine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 

@@ -56,7 +56,7 @@ public abstract class Entity
     /// <summary>
     /// Load entity into running game instance.
     /// </summary>
-    public void Load(GameEngine engine)
+    public void Load(Engine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
@@ -68,7 +68,7 @@ public abstract class Entity
     /// <summary>
     /// Unload entity from running game instance.
     /// </summary>
-    public virtual void Unload(GameEngine engine)
+    public virtual void Unload(Engine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
@@ -99,12 +99,12 @@ public abstract class Entity
         }
     }
 
-    protected virtual void LoadMembers(GameEngine engine)
+    protected virtual void LoadMembers(Engine engine)
     {
         // intentionally left blank
     }
 
-    protected virtual void UnloadMembers(GameEngine engine)
+    protected virtual void UnloadMembers(Engine engine)
     {
         // intentionally left blank
     }

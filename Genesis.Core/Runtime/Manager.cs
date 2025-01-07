@@ -1,6 +1,5 @@
 ﻿using System.Runtime.Loader;
 using System.Text;
-using System.Xml.Linq;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -21,10 +20,10 @@ public sealed class Manager
         _libraryPath = configuration["Genesis:LibraryPath"] ?? throw new Exception("LibraryPath not defined");
     }
 
-    public void DoAction(GameEngine engine, Content.Entity entity, string message)
+    public void DoAction(Engine engine, Player sender, string message)
     {
         ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(sender);
         ArgumentException.ThrowIfNullOrEmpty(message);
 
         try
@@ -40,9 +39,9 @@ public sealed class Manager
             {
                 if (_actions.ContainsKey(name) == true)
                 {
-                    if (_actions[name].Execute(engine, entity, message) == false)
+                    if (_actions[name].Execute(engine, sender, message) == false)
                     {
-                        entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\n>\n"));
+                        sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\n>\n"));
                     }
 
                     return;
@@ -54,9 +53,9 @@ public sealed class Manager
                     {
                         if (item.Key.StartsWith(name, true, null))
                         {
-                            if (item.Value.Execute(engine, entity, message) == false)
+                            if (item.Value.Execute(engine, sender, message) == false)
                             {
-                                entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\r\n>"));
+                                sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\r\n>"));
                             }
 
                             return;
@@ -65,7 +64,7 @@ public sealed class Manager
                 }
             }
 
-            entity?.Client?.SendBytes(Encoding.UTF8.GetBytes("Please rephrase that command.\n>\n"));
+            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Please rephrase that command.\n>\n"));
         }
         catch (Exception ex)
         {
@@ -167,7 +166,7 @@ public sealed class Manager
         }
     }
 
-    internal void Start(GameEngine engine, CancellationToken cancellationToken)
+    internal void Start(Engine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
@@ -178,7 +177,7 @@ public sealed class Manager
         _logger.LogInformation("Runtime Manager Started");
     }
 
-    internal void Stop(GameEngine engine, CancellationToken cancellationToken)
+    internal void Stop(Engine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();

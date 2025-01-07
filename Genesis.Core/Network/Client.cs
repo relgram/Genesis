@@ -28,7 +28,7 @@ public sealed class Client
 
     public string Address { get; }
 
-    public Entity? Entity { get; private set; }
+    public Player? Player { get; private set; }
 
     public Guid Id { get; } = Guid.NewGuid();
 
@@ -40,22 +40,22 @@ public sealed class Client
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    public void Disconnect(GameEngine engine, string message = "Disconnected")
+    public void Disconnect(Engine engine, string message = "Disconnected")
     {
         try
         {
-            if (Entity is Player player)
+            if (Player is not null)
             {
-                engine.Runtime.DoProcedure("Logout", "DoLogout", engine, player);
+                engine.Runtime.DoProcedure("Logout", "DoLogout", engine, Player);
             }
 
             message = $"<color red>{message}</color>";
 
-            Entity?.Parent?.Unregister(Entity);
+            Player?.Parent?.Unregister(Player);
 
             SendBytes(message.ToBytes());
 
-            Entity?.Unload(engine);
+            Player?.Unload(engine);
         }
         catch (Exception ex)
         {
@@ -71,7 +71,7 @@ public sealed class Client
 
             _keepAlive.Dispose();
 
-            Entity = null;
+            Player = null;
         }
     }
 
@@ -86,17 +86,18 @@ public sealed class Client
         }
     }
 
-    public void SetEntity(GameEngine engine, Entity entity)
+    public void SetPlayer(Engine engine, Player player)
     {
         ArgumentNullException.ThrowIfNull(engine);
-        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(player);
 
+        Player?.Client?.Disconnect(engine);
         Procedure = string.Empty;
-        entity.Client = this;
-        Entity = entity;
+        player.Client = this;
+        Player = player;
     }
 
-    internal void Start(GameEngine engine)
+    internal void Start(Engine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
@@ -124,7 +125,7 @@ public sealed class Client
         SendBytes([0x0]);
     }
 
-    private void ProcessMessage(GameEngine engine, string message)
+    private void ProcessMessage(Engine engine, string message)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
@@ -134,9 +135,9 @@ public sealed class Client
             {
                 if (string.IsNullOrWhiteSpace(Procedure) == true)
                 {
-                    if (Entity is not null)
+                    if (Player is not null)
                     {
-                        engine.Runtime.DoAction(engine, Entity, message.Trim());
+                        engine.Runtime.DoAction(engine, Player, message.Trim());
                     }
                 }
                 else
@@ -162,7 +163,7 @@ public sealed class Client
         }
     }
 
-    private async Task ReceiveAsync(GameEngine engine)
+    private async Task ReceiveAsync(Engine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 

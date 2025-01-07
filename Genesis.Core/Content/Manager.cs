@@ -108,7 +108,7 @@ public sealed class Manager
         }
     }
 
-    internal void Start(GameEngine engine, CancellationToken cancellationToken)
+    internal void Start(Engine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();
@@ -128,7 +128,7 @@ public sealed class Manager
         _logger.LogInformation("Content Manager Started");
     }
 
-    internal void Stop(GameEngine engine, CancellationToken cancellationToken)
+    internal void Stop(Engine engine, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engine);
         cancellationToken.ThrowIfCancellationRequested();

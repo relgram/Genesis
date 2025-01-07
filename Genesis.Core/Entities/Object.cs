@@ -50,13 +50,13 @@ public sealed class Object : Entity
         base.Unregister(entity);
     }
 
-    protected override void LoadMembers(GameEngine engine)
+    protected override void LoadMembers(Engine engine)
     {
         Effects.ForEach(x => x.Load(engine));
         Objects.ForEach(x => x.Load(engine));
     }
 
-    protected override void UnloadMembers(GameEngine engine)
+    protected override void UnloadMembers(Engine engine)
     {
         Effects.ForEach(x => x.Unload(engine));
         Objects.ForEach(x => x.Unload(engine));

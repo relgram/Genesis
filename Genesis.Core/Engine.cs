@@ -2,9 +2,9 @@
 
 namespace Genesis.Core;
 
-public sealed class GameEngine
+public sealed class Engine
 {
-    public GameEngine(Content.Manager content, Network.Manager network, Runtime.Manager runtime)
+    public Engine(Content.Manager content, Network.Manager network, Runtime.Manager runtime)
     {
         Content = content ?? throw new ArgumentNullException(nameof(content));
         Network = network ?? throw new ArgumentNullException(nameof(network));

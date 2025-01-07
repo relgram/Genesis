@@ -1,4 +1,4 @@
-﻿using Genesis.Core.Content;
+﻿using Genesis.Core.Entities;
 
 namespace Genesis.Core.Runtime;
 
@@ -17,5 +17,5 @@ public abstract class Action
     /// <summary>
     /// Executes static member of action matching parsed arguments from message.
     /// </summary>
-    public abstract bool Execute(GameEngine engine, Entity sender, string message);
+    public abstract bool Execute(Engine engine, Player sender, string message);
 }

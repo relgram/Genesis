@@ -11,7 +11,7 @@ public static class Extensions
         @this.AddSingleton<Content.Manager>();
         @this.AddSingleton<Network.Manager>();
         @this.AddSingleton<Runtime.Manager>();
-        @this.AddSingleton<GameEngine>();
+        @this.AddSingleton<Engine>();
         return @this;
     }
 

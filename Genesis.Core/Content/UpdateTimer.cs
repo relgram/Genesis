@@ -4,12 +4,12 @@ namespace Genesis.Core.Content;
 
 internal sealed class UpdateTimer : IDisposable
 {
-    private readonly GameEngine _engine;
+    private readonly Engine _engine;
     private readonly ConcurrentDictionary<Guid, Entity> _entities = [];
     private readonly Lock _executeLock = new();
     private readonly Timer _timer;
 
-    public UpdateTimer(GameEngine engine)
+    public UpdateTimer(Engine engine)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
         _timer = new Timer(Elapsed, null, Random.Shared.Next(0, 100), 1_000);

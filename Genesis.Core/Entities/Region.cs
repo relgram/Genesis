@@ -75,7 +75,7 @@ public sealed class Region : Entity
         base.Register(entity);
     }
 
-    public override void Unload(GameEngine engine)
+    public override void Unload(Engine engine)
     {
         ArgumentNullException.ThrowIfNull(engine);
 
@@ -119,7 +119,7 @@ public sealed class Region : Entity
         base.Unregister(entity);
     }
 
-    protected override void LoadMembers(GameEngine engine)
+    protected override void LoadMembers(Engine engine)
     {
         Effects.ForEach(x => x.Load(engine));
         Mobiles.ForEach(x => x.Load(engine));
@@ -127,7 +127,7 @@ public sealed class Region : Entity
         Portals.ForEach(x => x.Load(engine));
     }
 
-    protected override void UnloadMembers(GameEngine engine)
+    protected override void UnloadMembers(Engine engine)
     {
         Effects.ForEach(x => x.Unload(engine));
         Mobiles.ForEach(x => x.Unload(engine));

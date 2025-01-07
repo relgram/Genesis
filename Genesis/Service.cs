@@ -5,9 +5,9 @@ namespace Genesis;
 
 internal class Service : IHostedService
 {
-    private readonly GameEngine _engine;
+    private readonly Engine _engine;
 
-    public Service(GameEngine engine)
+    public Service(Engine engine)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
     }
