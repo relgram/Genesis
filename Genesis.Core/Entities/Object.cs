@@ -50,15 +50,15 @@ public sealed class Object : Entity
         base.Unregister(entity);
     }
 
-    protected override void LoadMembers(Engine engine)
+    protected override void LoadMembers(Driver driver)
     {
-        Effects.ForEach(x => x.Load(engine));
-        Objects.ForEach(x => x.Load(engine));
+        Effects.ForEach(x => x.Load(driver));
+        Objects.ForEach(x => x.Load(driver));
     }
 
-    protected override void UnloadMembers(Engine engine)
+    protected override void UnloadMembers(Driver driver)
     {
-        Effects.ForEach(x => x.Unload(engine));
-        Objects.ForEach(x => x.Unload(engine));
+        Effects.ForEach(x => x.Unload(driver));
+        Objects.ForEach(x => x.Unload(driver));
     }
 }

@@ -17,5 +17,5 @@ public abstract class Action
     /// <summary>
     /// Executes static member of action matching parsed arguments from message.
     /// </summary>
-    public abstract bool Execute(Engine engine, Player sender, string message);
+    public abstract bool Execute(Driver driver, Player sender, string message);
 }

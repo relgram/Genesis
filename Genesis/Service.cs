@@ -5,24 +5,24 @@ namespace Genesis;
 
 internal class Service : IHostedService
 {
-    private readonly Engine _engine;
+    private readonly Driver _driver;
 
-    public Service(Engine engine)
+    public Service(Driver driver)
     {
-        _engine = engine ?? throw new ArgumentNullException(nameof(engine));
+        _driver = driver ?? throw new ArgumentNullException(nameof(driver));
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        _engine.Start(cancellationToken);
+        _driver.Start(cancellationToken);
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        _engine.Stop(cancellationToken);
+        _driver.Stop(cancellationToken);
         return Task.CompletedTask;
     }
 }

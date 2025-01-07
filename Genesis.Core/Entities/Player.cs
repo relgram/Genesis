@@ -36,13 +36,13 @@ public sealed class Player : Entity
         base.Register(entity);
     }
 
-    public override void Unload(Engine engine)
+    public override void Unload(Driver driver)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
 
-        engine.Content.SavePlayer(this);
+        driver.Content.SavePlayer(this);
 
-        base.Unload(engine);
+        base.Unload(driver);
     }
 
     public void Unregister(Effect entity)
@@ -59,15 +59,15 @@ public sealed class Player : Entity
         base.Unregister(entity);
     }
 
-    protected override void LoadMembers(Engine engine)
+    protected override void LoadMembers(Driver driver)
     {
-        Effects.ForEach(x => x.Load(engine));
-        Objects.ForEach(x => x.Load(engine));
+        Effects.ForEach(x => x.Load(driver));
+        Objects.ForEach(x => x.Load(driver));
     }
 
-    protected override void UnloadMembers(Engine engine)
+    protected override void UnloadMembers(Driver driver)
     {
-        Effects.ForEach(x => x.Unload(engine));
-        Objects.ForEach(x => x.Unload(engine));
+        Effects.ForEach(x => x.Unload(driver));
+        Objects.ForEach(x => x.Unload(driver));
     }
 }

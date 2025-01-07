@@ -56,25 +56,25 @@ public abstract class Entity
     /// <summary>
     /// Load entity into running game instance.
     /// </summary>
-    public void Load(Engine engine)
+    public void Load(Driver driver)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
 
-        engine.Content.Register(this);
+        driver.Content.Register(this);
 
-        LoadMembers(engine);
+        LoadMembers(driver);
     }
 
     /// <summary>
     /// Unload entity from running game instance.
     /// </summary>
-    public virtual void Unload(Engine engine)
+    public virtual void Unload(Driver driver)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
 
-        UnloadMembers(engine);
+        UnloadMembers(driver);
 
-        engine.Content.Unregister(this);
+        driver.Content.Unregister(this);
     }
 
     internal void Register(Entity entity)
@@ -99,12 +99,12 @@ public abstract class Entity
         }
     }
 
-    protected virtual void LoadMembers(Engine engine)
+    protected virtual void LoadMembers(Driver driver)
     {
         // intentionally left blank
     }
 
-    protected virtual void UnloadMembers(Engine engine)
+    protected virtual void UnloadMembers(Driver driver)
     {
         // intentionally left blank
     }

@@ -20,9 +20,9 @@ public sealed class Manager
         _libraryPath = configuration["Genesis:LibraryPath"] ?? throw new Exception("LibraryPath not defined");
     }
 
-    public void DoAction(Engine engine, Player sender, string message)
+    public void DoAction(Driver driver, Player sender, string message)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
         ArgumentNullException.ThrowIfNull(sender);
         ArgumentException.ThrowIfNullOrEmpty(message);
 
@@ -39,7 +39,7 @@ public sealed class Manager
             {
                 if (_actions.ContainsKey(name) == true)
                 {
-                    if (_actions[name].Execute(engine, sender, message) == false)
+                    if (_actions[name].Execute(driver, sender, message) == false)
                     {
                         sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\n>\n"));
                     }
@@ -53,7 +53,7 @@ public sealed class Manager
                     {
                         if (item.Key.StartsWith(name, true, null))
                         {
-                            if (item.Value.Execute(engine, sender, message) == false)
+                            if (item.Value.Execute(driver, sender, message) == false)
                             {
                                 sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\r\n>"));
                             }
@@ -166,9 +166,9 @@ public sealed class Manager
         }
     }
 
-    internal void Start(Engine engine, CancellationToken cancellationToken)
+    internal void Start(Driver driver, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Starting Runtime Manager...");
 
@@ -177,9 +177,9 @@ public sealed class Manager
         _logger.LogInformation("Runtime Manager Started");
     }
 
-    internal void Stop(Engine engine, CancellationToken cancellationToken)
+    internal void Stop(Driver driver, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Stopping Runtime Manager...");
 

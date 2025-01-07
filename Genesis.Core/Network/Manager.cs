@@ -30,15 +30,15 @@ public sealed class Manager
         }
     }
 
-    internal void Start(Engine engine, CancellationToken cancellationToken)
+    internal void Start(Driver driver, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Starting Network Manager...");
 
         _tcpListener.Start();
 
-        AcceptSocketAsync(engine).FireAndForget(ex =>
+        AcceptSocketAsync(driver).FireAndForget(ex =>
         {
             _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
         });
@@ -46,9 +46,9 @@ public sealed class Manager
         _logger.LogInformation("Network Manager Started");
     }
 
-    internal void Stop(Engine engine, CancellationToken cancellationToken)
+    internal void Stop(Driver driver, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Stopping Network Manager...");
 
@@ -56,7 +56,7 @@ public sealed class Manager
 
         foreach (var client in _clients.Values)
         {
-            client.Disconnect(engine, "Server Shutting Down");
+            client.Disconnect(driver, "Server Shutting Down");
         }
 
         _logger.LogInformation("Network Manager Stopped");
@@ -74,9 +74,9 @@ public sealed class Manager
         }
     }
 
-    private async Task AcceptSocketAsync(Engine engine)
+    private async Task AcceptSocketAsync(Driver driver)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
 
         try
         {
@@ -86,7 +86,7 @@ public sealed class Manager
 
             Client client = new(logger, socket);
 
-            client.Start(engine);
+            client.Start(driver);
         }
         catch (Exception ex)
         {
@@ -99,7 +99,7 @@ public sealed class Manager
         {
             if (_tcpListener.Server.IsBound)
             {
-                AcceptSocketAsync(engine).FireAndForget(ex =>
+                AcceptSocketAsync(driver).FireAndForget(ex =>
                 {
                     _logger.LogCritical(ex, "AcceptSocketAsync Failed Unexpectedly");
                 });

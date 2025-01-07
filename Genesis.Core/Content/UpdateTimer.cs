@@ -4,14 +4,14 @@ namespace Genesis.Core.Content;
 
 internal sealed class UpdateTimer : IDisposable
 {
-    private readonly Engine _engine;
+    private readonly Driver _driver;
     private readonly ConcurrentDictionary<Guid, Entity> _entities = [];
     private readonly Lock _executeLock = new();
     private readonly Timer _timer;
 
-    public UpdateTimer(Engine engine)
+    public UpdateTimer(Driver driver)
     {
-        _engine = engine ?? throw new ArgumentNullException(nameof(engine));
+        _driver = driver ?? throw new ArgumentNullException(nameof(driver));
         _timer = new Timer(Elapsed, null, Random.Shared.Next(0, 100), 1_000);
     }
 
@@ -45,11 +45,11 @@ internal sealed class UpdateTimer : IDisposable
             {
                 if (entity.Parent is null)
                 {
-                    _engine.Runtime.DoProcedure("Update", "OnUpdate", _engine, entity);
+                    _driver.Runtime.DoProcedure("Update", "OnUpdate", _driver, entity);
                 }
                 else
                 {
-                    _engine.Runtime.DoProcedure("Update", "OnUpdate", _engine, entity, entity.Parent);
+                    _driver.Runtime.DoProcedure("Update", "OnUpdate", _driver, entity, entity.Parent);
                 }
             }
         }

@@ -108,19 +108,19 @@ public sealed class Manager
         }
     }
 
-    internal void Start(Engine engine, CancellationToken cancellationToken)
+    internal void Start(Driver driver, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Starting Content Manager...");
 
-        Enumerable.Range(0, _updateTimers.Length).ForEach(x => _updateTimers[x] = new(engine));
+        Enumerable.Range(0, _updateTimers.Length).ForEach(x => _updateTimers[x] = new(driver));
 
         var root = Path.Join(_contentPath, "Regions");
 
         foreach (string path in Directory.GetFiles(root, "*.json"))
         {
-            JsonSerializer.Deserialize<Region>(File.ReadAllText(path))?.Load(engine);
+            JsonSerializer.Deserialize<Region>(File.ReadAllText(path))?.Load(driver);
         }
 
         _logger.LogInformation("Loaded {count} entities", _entities.Sum(list => list.Value.Count));
@@ -128,15 +128,15 @@ public sealed class Manager
         _logger.LogInformation("Content Manager Started");
     }
 
-    internal void Stop(Engine engine, CancellationToken cancellationToken)
+    internal void Stop(Driver driver, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
         cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation("Stopping Content Manager...");
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(x => _updateTimers[x].Dispose());
 
-        Find<Region>(x => true).ForEach(x => x.Unload(engine));
+        Find<Region>(x => true).ForEach(x => x.Unload(driver));
 
         _logger.LogInformation("Content Manager Stopped");
     }

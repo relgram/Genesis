@@ -40,13 +40,13 @@ public sealed class Client
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    public void Disconnect(Engine engine, string message = "Disconnected")
+    public void Disconnect(Driver driver, string message = "Disconnected")
     {
         try
         {
             if (Player is not null)
             {
-                engine.Runtime.DoProcedure("Logout", "DoLogout", engine, Player);
+                driver.Runtime.DoProcedure("Logout", "DoLogout", driver, Player);
             }
 
             message = $"<color red>{message}</color>";
@@ -55,7 +55,7 @@ public sealed class Client
 
             SendBytes(message.ToBytes());
 
-            Player?.Unload(engine);
+            Player?.Unload(driver);
         }
         catch (Exception ex)
         {
@@ -65,7 +65,7 @@ public sealed class Client
         {
             _socket.Shutdown(SocketShutdown.Both);
 
-            engine.Network.Unregister(this);
+            driver.Network.Unregister(this);
 
             _socket.Close(CLOSE_TIMEOUT);
 
@@ -86,35 +86,35 @@ public sealed class Client
         }
     }
 
-    public void SetPlayer(Engine engine, Player player)
+    public void SetPlayer(Driver driver, Player player)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
         ArgumentNullException.ThrowIfNull(player);
 
-        Player?.Client?.Disconnect(engine);
+        Player?.Client?.Disconnect(driver);
         Procedure = string.Empty;
         player.Client = this;
         Player = player;
     }
 
-    internal void Start(Engine engine)
+    internal void Start(Driver driver)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
 
         try
         {
-            engine.Network.Register(this);
+            driver.Network.Register(this);
 
-            ReceiveAsync(engine).FireAndForget(ex =>
+            ReceiveAsync(driver).FireAndForget(ex =>
             {
-                Disconnect(engine, "ReceiveAsync failed unexpectedly");
+                Disconnect(driver, "ReceiveAsync failed unexpectedly");
             });
 
-            engine.Runtime.DoProcedure(Procedure, $"Do{Procedure}", engine, this);
+            driver.Runtime.DoProcedure(Procedure, $"Do{Procedure}", driver, this);
         }
         catch (Exception ex)
         {
-            Disconnect(engine, "Disconnected");
+            Disconnect(driver, "Disconnected");
 
             _logger.LogWarning(ex, "Start failed unexpectedly");
         }
@@ -125,9 +125,9 @@ public sealed class Client
         SendBytes([0x0]);
     }
 
-    private void ProcessMessage(Engine engine, string message)
+    private void ProcessMessage(Driver driver, string message)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
 
         try
         {
@@ -137,12 +137,12 @@ public sealed class Client
                 {
                     if (Player is not null)
                     {
-                        engine.Runtime.DoAction(engine, Player, message.Trim());
+                        driver.Runtime.DoAction(driver, Player, message.Trim());
                     }
                 }
                 else
                 {
-                    engine.Runtime.DoProcedure(Procedure, $"Do{Procedure}", engine, this, message.Trim());
+                    driver.Runtime.DoProcedure(Procedure, $"Do{Procedure}", driver, this, message.Trim());
                 }
             }
         }
@@ -154,18 +154,18 @@ public sealed class Client
         {
             if (_socket.Connected == true)
             {
-                ReceiveAsync(engine).FireAndForget(ex =>
+                ReceiveAsync(driver).FireAndForget(ex =>
                 {
-                    Disconnect(engine, "Connection failed unexpectedly");
+                    Disconnect(driver, "Connection failed unexpectedly");
                     _logger.LogWarning(ex, "ProcessMessage failed unexpectedly");
                 });
             }
         }
     }
 
-    private async Task ReceiveAsync(Engine engine)
+    private async Task ReceiveAsync(Driver driver)
     {
-        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(driver);
 
         var bytes = new byte[4096];
 
@@ -173,13 +173,13 @@ public sealed class Client
 
         if (count == 0)
         {
-            Disconnect(engine, "Disconnected");
+            Disconnect(driver, "Disconnected");
         }
         else
         {
             var message = Encoding.UTF8.GetString(bytes).Split(CARRIAGE_RETURN);
 
-            ProcessMessage(engine, string.Join(' ', message[0].Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+            ProcessMessage(driver, string.Join(' ', message[0].Split(' ', StringSplitOptions.RemoveEmptyEntries)));
         }
     }
 }

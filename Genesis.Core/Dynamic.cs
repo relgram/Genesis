@@ -6,7 +6,7 @@ namespace Genesis.Core;
 [JsonConverter(typeof(DynamicConverter))]
 public sealed class Dynamic
 {
-    private readonly string _value = string.Empty;
+    private string _value = string.Empty;
 
     public Dynamic(string value)
     {
@@ -34,6 +34,8 @@ public sealed class Dynamic
     public static implicit operator int(Dynamic property) => int.TryParse(property, out var result) ? result : 0;
 
     public static implicit operator string(Dynamic property) => property.ToString();
+
+    public void Change(int value) => _value = value.ToString();
 
     public override string ToString() => _value;
 
