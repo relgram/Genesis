@@ -33,14 +33,23 @@ public abstract class Entity
     [JsonIgnore]
     protected HashSet<Entity> Entities { get; } = [];
 
+    /// <summary>
+    /// Gets or sets the property associated with the given key
+    /// </summary>
     public Dynamic this[string key]
     {
         get => _properties.GetValueOrDefault(key, Dynamic.Empty);
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
+    /// <summary>
+    /// Determines whether the specified Entity is equal to the current Entity.
+    /// </summary>
     public bool Equals(Entity? other) => other is not null && Id == other.Id;
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
     public override bool Equals(object? obj) => Equals(obj as Entity);
 
     /// <summary>
@@ -51,6 +60,9 @@ public abstract class Entity
         return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index, predicate, order);
     }
 
+    /// <summary>
+    /// Retursn the hash code for this instance.
+    /// </summary>
     public override int GetHashCode() => Id.GetHashCode();
 
     /// <summary>
