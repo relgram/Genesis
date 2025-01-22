@@ -29,14 +29,4 @@ public sealed class Portal : Entity
 
         base.Unregister(entity);
     }
-
-    protected override void LoadMembers(Driver driver)
-    {
-        Effects.ForEach(x => x.Load(driver));
-    }
-
-    protected override void UnloadMembers(Driver driver)
-    {
-        Effects.ForEach(x => x.Unload(driver));
-    }
 }

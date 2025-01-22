@@ -40,6 +40,15 @@ public sealed class Region : Entity
         init => value.ForEach(Register);
     }
 
+    public override void Destroy(Driver driver)
+    {
+        ArgumentNullException.ThrowIfNull(driver);
+
+        driver.Content.DeleteRegion(this);
+
+        base.Destroy(driver);
+    }
+
     public void Register(Effect entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
@@ -117,21 +126,5 @@ public sealed class Region : Entity
         ArgumentNullException.ThrowIfNull(entity);
 
         base.Unregister(entity);
-    }
-
-    protected override void LoadMembers(Driver driver)
-    {
-        Effects.ForEach(x => x.Load(driver));
-        Mobiles.ForEach(x => x.Load(driver));
-        Objects.ForEach(x => x.Load(driver));
-        Portals.ForEach(x => x.Load(driver));
-    }
-
-    protected override void UnloadMembers(Driver driver)
-    {
-        Effects.ForEach(x => x.Unload(driver));
-        Mobiles.ForEach(x => x.Unload(driver));
-        Objects.ForEach(x => x.Unload(driver));
-        Portals.ForEach(x => x.Unload(driver));
     }
 }

@@ -96,6 +96,17 @@ public sealed class Manager
         File.WriteAllText(Path.Join(path, $"{region.Id}.json"), contents);
     }
 
+    internal void DeleteRegion(Region region)
+    {
+        ArgumentNullException.ThrowIfNull(region);
+
+        _logger.LogInformation("Deleting Region: {id}", region.Id);
+
+        var path = Path.Join(_contentPath, "Regions");
+
+        File.Delete(Path.Join(path, $"{region.Id}.json"));
+    }
+
     internal void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);

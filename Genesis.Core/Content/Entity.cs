@@ -26,7 +26,7 @@ public abstract class Entity
     [JsonInclude]
     public Dictionary<string, Dynamic> Properties
     {
-        internal get => _properties.ToDictionary(x => x.Key, x => x.Value);
+        get => _properties.ToDictionary(x => x.Key, x => x.Value);
         init => value.ForEach(x => _properties[x.Key] = x.Value);
     }
 
@@ -34,12 +34,26 @@ public abstract class Entity
     protected HashSet<Entity> Entities { get; } = [];
 
     /// <summary>
-    /// Gets or sets the property associated with the given key
+    /// Gets or sets the property associated with the given key.
     /// </summary>
     public Dynamic this[string key]
     {
         get => _properties.GetValueOrDefault(key, Dynamic.Empty);
         set => _properties[key] = value ?? Dynamic.Empty;
+    }
+
+    /// <summary>
+    /// Destroys the entity, removing it from the game and removing save file if necessary.
+    /// </summary>
+    public virtual void Destroy(Driver driver)
+    {
+        ArgumentNullException.ThrowIfNull(driver);
+
+        Entities.ForEach(x => x.Destroy(driver));
+
+        driver.Content.Unregister(this);
+
+        Parent?.Unregister(this);
     }
 
     /// <summary>
@@ -74,7 +88,7 @@ public abstract class Entity
 
         driver.Content.Register(this);
 
-        LoadMembers(driver);
+        Entities.ForEach(x => x.Load(driver));
     }
 
     /// <summary>
@@ -84,7 +98,7 @@ public abstract class Entity
     {
         ArgumentNullException.ThrowIfNull(driver);
 
-        UnloadMembers(driver);
+        Entities.ForEach(x => x.Unload(driver));
 
         driver.Content.Unregister(this);
     }
@@ -109,16 +123,6 @@ public abstract class Entity
         {
             entity.Parent = null;
         }
-    }
-
-    protected virtual void LoadMembers(Driver driver)
-    {
-        // intentionally left blank
-    }
-
-    protected virtual void UnloadMembers(Driver driver)
-    {
-        // intentionally left blank
     }
 
     private Entity? FindMember(string keyword, ref int index, Func<Entity, bool>? predicate = null, Func<Entity, bool>? order = null)

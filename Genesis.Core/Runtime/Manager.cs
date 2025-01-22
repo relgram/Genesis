@@ -102,53 +102,66 @@ public sealed class Manager
     {
         try
         {
+            var actions = new Dictionary<string, Action>();
+            var procedures = new Dictionary<string, Procedure>();
+
+            var fileName = Path.GetTempFileName();
+
+            File.Copy(_libraryPath, fileName, overwrite: true);
+
+            var context = new AssemblyLoadContext("Genesis", isCollectible: true);
+
+            sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Loading Library...\n>\n"));
+
+            var assembly = context.LoadFromAssemblyPath(fileName);
+
+            foreach (var type in assembly.GetTypes().Where(x => x.IsAbstract == false))
+            {
+                if (type.IsAssignableTo(typeof(Action)) == true)
+                {
+                    if (Activator.CreateInstance(type) is Action action)
+                    {
+                        if (actions.TryAdd(action.Name, action) == false)
+                        {
+                            _logger.LogWarning("Duplicate action found: {action}", action.Name);
+                        }
+
+                        if (action.Alias is not null)
+                        {
+                            if (actions.TryAdd(action.Alias, action) == false)
+                            {
+                                _logger.LogWarning("Duplicate action found: {action}", action.Alias);
+                            }
+                        }
+                    }
+                }
+
+                if (type.IsAssignableTo(typeof(Procedure)) == true)
+                {
+                    if (Activator.CreateInstance(type) is Procedure procedure)
+                    {
+                        if (procedures.TryAdd(procedure.Name, procedure) == false)
+                        {
+                            _logger.LogWarning("Duplicate procedure found: {procedure}", procedure.Name);
+                        }
+                    }
+                }
+            }
+
             lock (_internalLock)
             {
                 _actions.Clear();
 
                 _procedures.Clear();
 
-                var fileName = Path.GetTempFileName();
-
-                File.Copy(_libraryPath, fileName, overwrite: true);
-
-                var context = new AssemblyLoadContext("Genesis", isCollectible: true);
-
-                sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Loading Library...\n>\n"));
-
-                var assembly = context.LoadFromAssemblyPath(fileName);
-
-                foreach (var type in assembly.GetTypes().Where(x => x.IsAbstract == false))
+                foreach (var action in actions)
                 {
-                    if (type.IsAssignableTo(typeof(Action)) == true)
-                    {
-                        if (Activator.CreateInstance(type) is Action action)
-                        {
-                            if (_actions.TryAdd(action.Name, action) == false)
-                            {
-                                _logger.LogWarning("Duplicate action found: {action}", action.Name);
-                            }
+                    _actions.Add(action.Key, action.Value);
+                }
 
-                            if (action.Alias is not null)
-                            {
-                                if (_actions.TryAdd(action.Alias, action) == false)
-                                {
-                                    _logger.LogWarning("Duplicate action found: {action}", action.Alias);
-                                }
-                            }
-                        }
-                    }
-
-                    if (type.IsAssignableTo(typeof(Procedure)) == true)
-                    {
-                        if (Activator.CreateInstance(type) is Procedure procedure)
-                        {
-                            if (_procedures.TryAdd(procedure.Name, procedure) == false)
-                            {
-                                _logger.LogWarning("Duplicate procedure found: {procedure}", procedure.Name);
-                            }
-                        }
-                    }
+                foreach (var procedure in procedures)
+                {
+                    _procedures.Add(procedure.Key, procedure.Value);
                 }
             }
 

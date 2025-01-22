@@ -49,16 +49,4 @@ public sealed class Object : Entity
 
         base.Unregister(entity);
     }
-
-    protected override void LoadMembers(Driver driver)
-    {
-        Effects.ForEach(x => x.Load(driver));
-        Objects.ForEach(x => x.Load(driver));
-    }
-
-    protected override void UnloadMembers(Driver driver)
-    {
-        Effects.ForEach(x => x.Unload(driver));
-        Objects.ForEach(x => x.Unload(driver));
-    }
 }
