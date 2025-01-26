@@ -15,7 +15,13 @@ internal sealed class UpdateTimer : IDisposable
         _timer = new Timer(Elapsed, null, Random.Shared.Next(0, 100), 1_000);
     }
 
-    public void Dispose() => _timer.Dispose();
+    public void Dispose()
+    {
+        lock (_executeLock)
+        {
+            _timer.Dispose();
+        }
+    }
 
     public void Register(Entity entity)
     {

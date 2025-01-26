@@ -40,15 +40,6 @@ public sealed class Region : Entity
         init => value.ForEach(Register);
     }
 
-    public override void Destroy(Driver driver)
-    {
-        ArgumentNullException.ThrowIfNull(driver);
-
-        driver.Content.DeleteRegion(this);
-
-        base.Destroy(driver);
-    }
-
     public void Register(Effect entity)
     {
         ArgumentNullException.ThrowIfNull(entity);

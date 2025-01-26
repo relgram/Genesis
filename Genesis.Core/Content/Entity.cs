@@ -43,20 +43,6 @@ public abstract class Entity
     }
 
     /// <summary>
-    /// Destroys the entity, removing it from the game and removing save file if necessary.
-    /// </summary>
-    public virtual void Destroy(Driver driver)
-    {
-        ArgumentNullException.ThrowIfNull(driver);
-
-        Entities.ForEach(x => x.Destroy(driver));
-
-        driver.Content.Unregister(this);
-
-        Parent?.Unregister(this);
-    }
-
-    /// <summary>
     /// Determines whether the specified Entity is equal to the current Entity.
     /// </summary>
     public bool Equals(Entity? other) => other is not null && Id == other.Id;
@@ -101,6 +87,8 @@ public abstract class Entity
         Entities.ForEach(x => x.Unload(driver));
 
         driver.Content.Unregister(this);
+
+        Parent?.Unregister(this);
     }
 
     internal void Register(Entity entity)
