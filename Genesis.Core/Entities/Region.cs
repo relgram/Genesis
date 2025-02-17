@@ -79,7 +79,7 @@ public sealed class Region : Entity
     {
         ArgumentNullException.ThrowIfNull(driver);
 
-        driver.Content.SaveRegion(this);
+        driver.Content.Save(this);
 
         base.Unload(driver);
     }

@@ -10,17 +10,14 @@ public sealed class Manager
     private static readonly JsonSerializerOptions OPTIONS = new() { WriteIndented = true };
 
     private readonly string _contentPath;
-
     private readonly Dictionary<Type, Dictionary<Guid, Entity>> _entities = [];
-
     private readonly ILogger<Manager> _logger;
-
     private readonly UpdateTimer[] _updateTimers = new UpdateTimer[100];
 
     public Manager(ILogger<Manager> logger, IConfiguration configuration)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _contentPath = configuration["Genesis:ContentPath"] ?? throw new Exception("ContentPath not defined");
+        _contentPath = configuration["Genesis:ContentPath"] ?? throw new ArgumentException("ContentPath not defined");
 
         foreach (var type in typeof(Entity).Assembly.GetTypes().Where(x => x.IsAbstract is false))
         {
@@ -67,11 +64,11 @@ public sealed class Manager
     /// <summary>
     /// Save provided Player to file system.
     /// </summary>
-    public void SavePlayer(Player player)
+    public void Save(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
 
-        _logger.LogInformation("Saving Player: {id}", player.Id);
+        _logger.LogInformation("Saving Player: {Id}", player.Id);
 
         var path = Path.Join(_contentPath, "Players");
 
@@ -83,11 +80,11 @@ public sealed class Manager
     /// <summary>
     /// Save provided Region to file system.
     /// </summary>
-    public void SaveRegion(Region region)
+    public void Save(Region region)
     {
         ArgumentNullException.ThrowIfNull(region);
 
-        _logger.LogInformation("Saving Region: {id}", region.Id);
+        _logger.LogInformation("Saving Region: {Id}", region.Id);
 
         var path = Path.Join(_contentPath, "Regions");
 
@@ -100,7 +97,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(region);
 
-        _logger.LogInformation("Deleting Region: {id}", region.Id);
+        _logger.LogInformation("Deleting Region: {Id}", region.Id);
 
         var path = Path.Join(_contentPath, "Regions");
 
@@ -111,7 +108,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Register {type}: {id}", entity.GetType().Name, entity.Id);
+        _logger.LogInformation("Register {Type}: {Id}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
@@ -134,8 +131,6 @@ public sealed class Manager
             JsonSerializer.Deserialize<Region>(File.ReadAllText(path))?.Load(driver);
         }
 
-        _logger.LogInformation("Loaded {count} entities", _entities.Sum(list => list.Value.Count));
-
         _logger.LogInformation("Content Manager Started");
     }
 
@@ -156,7 +151,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Unregister {type}: {id}", entity.GetType().Name, entity.Id);
+        _logger.LogInformation("Unregister {Type}: {Id}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].Remove(entity.Id) == true)
         {

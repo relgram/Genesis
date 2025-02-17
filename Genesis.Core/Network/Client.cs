@@ -1,12 +1,11 @@
 ﻿using System.Net.Sockets;
 using System.Text;
-using Genesis.Core.Content;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Network;
 
-public sealed class Client
+public sealed class Client : IDisposable
 {
     private const char CARRIAGE_RETURN = '\r';
     private static readonly int CLOSE_TIMEOUT = 100;
@@ -73,6 +72,11 @@ public sealed class Client
 
             Player = null;
         }
+    }
+
+    public void Dispose()
+    {
+        _socket.Dispose();
     }
 
     public void SendBytes(byte[] bytes)

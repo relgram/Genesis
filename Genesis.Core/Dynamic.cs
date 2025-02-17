@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Genesis.Core;
@@ -19,13 +20,13 @@ public sealed class Dynamic
 
     public static implicit operator double(Dynamic property) => double.TryParse(property, out var result) ? result : 0;
 
-    public static implicit operator Dynamic(bool value) => new(value.ToString());
+    public static implicit operator Dynamic(bool value) => new(value.ToString(CultureInfo.InvariantCulture));
 
-    public static implicit operator Dynamic(double value) => new(value.ToString());
+    public static implicit operator Dynamic(double value) => new(value.ToString(CultureInfo.InvariantCulture));
 
     public static implicit operator Dynamic(Guid value) => new(value.ToString());
 
-    public static implicit operator Dynamic(int value) => new(value.ToString());
+    public static implicit operator Dynamic(int value) => new(value.ToString(CultureInfo.InvariantCulture));
 
     public static implicit operator Dynamic(string value) => new(value);
 
@@ -35,11 +36,11 @@ public sealed class Dynamic
 
     public static implicit operator string(Dynamic property) => property.ToString();
 
-    public void Change(int value) => _value = value.ToString();
+    public void Change(int value) => _value = value.ToString(CultureInfo.InvariantCulture);
 
     public override string ToString() => _value;
 
-    public string ToUpper() => _value.ToUpper();
+    public string ToUpper() => _value.ToUpper(CultureInfo.InvariantCulture);
 }
 
 public sealed class DynamicConverter : JsonConverter<Dynamic>

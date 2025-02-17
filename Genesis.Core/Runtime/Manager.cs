@@ -17,7 +17,7 @@ public sealed class Manager
     public Manager(ILogger<Manager> logger, IConfiguration configuration)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _libraryPath = configuration["Genesis:LibraryPath"] ?? throw new Exception("LibraryPath not defined");
+        _libraryPath = configuration["Genesis:LibraryPath"] ?? throw new ArgumentException("LibraryPath not defined");
     }
 
     public void DoAction(Driver driver, Player sender, string message)
@@ -123,14 +123,14 @@ public sealed class Manager
                     {
                         if (actions.TryAdd(action.Name, action) == false)
                         {
-                            _logger.LogWarning("Duplicate action found: {action}", action.Name);
+                            _logger.LogWarning("Duplicate action found: {Action}", action.Name);
                         }
 
                         if (action.Alias is not null)
                         {
                             if (actions.TryAdd(action.Alias, action) == false)
                             {
-                                _logger.LogWarning("Duplicate action found: {action}", action.Alias);
+                                _logger.LogWarning("Duplicate action found: {Action}", action.Alias);
                             }
                         }
                     }
@@ -142,7 +142,7 @@ public sealed class Manager
                     {
                         if (procedures.TryAdd(procedure.Name, procedure) == false)
                         {
-                            _logger.LogWarning("Duplicate procedure found: {procedure}", procedure.Name);
+                            _logger.LogWarning("Duplicate procedure found: {Procedure}", procedure.Name);
                         }
                     }
                 }
@@ -165,8 +165,8 @@ public sealed class Manager
                 }
             }
 
-            _logger.LogInformation("Loaded {count} Actions", _actions.Count);
-            _logger.LogInformation("Loaded {count} Procedures", _procedures.Count);
+            _logger.LogInformation("Loaded {Count} Actions", _actions.Count);
+            _logger.LogInformation("Loaded {Count} Procedures", _procedures.Count);
 
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_actions.Count} Actions\n"));
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_procedures.Count} Procedures\n>\n"));

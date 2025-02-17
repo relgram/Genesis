@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Network;
 
-public sealed class Manager
+public sealed class Manager : IDisposable
 {
     private readonly ConcurrentDictionary<Guid, Client> _clients = new();
     private readonly ILogger<Manager> _logger;
@@ -18,11 +18,16 @@ public sealed class Manager
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
     }
 
+    public void Dispose()
+    {
+        _tcpListener.Dispose();
+    }
+
     internal void Register(Client client)
     {
         ArgumentNullException.ThrowIfNull(client);
 
-        _logger.LogInformation("Register client: {address}", client.Address);
+        _logger.LogInformation("Register client: {Address}", client.Address);
 
         if (_clients.TryAdd(client.Id, client) == false)
         {
@@ -66,7 +71,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(client);
 
-        _logger.LogInformation("Unregister client: {address}", client.Address);
+        _logger.LogInformation("Unregister client: {Address}", client.Address);
 
         if (_clients.TryRemove(client.Id, out _) == false)
         {

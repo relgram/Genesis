@@ -29,7 +29,7 @@ internal sealed class UpdateTimer : IDisposable
 
         if (_entities.TryAdd(entity.Id, entity) == false)
         {
-            throw new Exception($"Failed to register [{entity.GetType().Name}]: {entity.Id}");
+            throw new ArgumentException($"Failed to register [{entity.GetType().Name}]: {entity.Id}");
         }
     }
 
@@ -39,7 +39,7 @@ internal sealed class UpdateTimer : IDisposable
 
         if (_entities.TryRemove(entity.Id, out _) == false)
         {
-            throw new Exception($"Failed to unregister [{entity.GetType().Name}]: {entity.Id}");
+            throw new ArgumentException($"Failed to unregister [{entity.GetType().Name}]: {entity.Id}");
         }
     }
 

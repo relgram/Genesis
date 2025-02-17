@@ -6,13 +6,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Genesis;
 
-internal class Program
+internal sealed class Program
 {
     public static async Task Main(string[] args)
     {
         if (GCSettings.IsServerGC == false)
         {
-            throw new Exception("Server Garbage Collection Disabled");
+            throw new InvalidOperationException("Server Garbage Collection Disabled");
         }
 
         var builder = Host.CreateDefaultBuilder(args);

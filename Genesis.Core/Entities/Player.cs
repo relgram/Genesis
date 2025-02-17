@@ -40,7 +40,7 @@ public sealed class Player : Entity
     {
         ArgumentNullException.ThrowIfNull(driver);
 
-        driver.Content.SavePlayer(this);
+        driver.Content.Save(this);
 
         base.Unload(driver);
     }

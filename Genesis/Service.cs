@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Genesis;
 
-internal class Service : IHostedService
+internal sealed class Service : IHostedService
 {
     private readonly Driver _driver;
 
