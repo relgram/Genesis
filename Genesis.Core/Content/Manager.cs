@@ -9,7 +9,6 @@ public sealed class Manager
 {
     private static readonly JsonSerializerOptions OPTIONS = new() { WriteIndented = true };
 
-    private readonly string _contentPath;
     private readonly Dictionary<Type, Dictionary<Guid, Entity>> _entities = [];
     private readonly ILogger<Manager> _logger;
     private readonly UpdateTimer[] _updateTimers = new UpdateTimer[100];
@@ -17,7 +16,7 @@ public sealed class Manager
     public Manager(ILogger<Manager> logger, IConfiguration configuration)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _contentPath = configuration["Genesis:ContentPath"] ?? throw new ArgumentException("ContentPath not defined");
+        ContentPath = configuration["Genesis:ContentPath"] ?? throw new ArgumentException("ContentPath not defined");
 
         foreach (var type in typeof(Entity).Assembly.GetTypes().Where(x => x.IsAbstract is false))
         {
@@ -28,12 +27,22 @@ public sealed class Manager
         }
     }
 
+    public string ContentPath { get; }
+
     /// <summary>
     /// Returns array of all registered entities of type T matching provided predicate.
     /// </summary>
     public T[] Find<T>(Func<T, bool> predicate) where T : Entity
     {
         return [.. _entities[typeof(T)].Values.Cast<T>().Where(predicate)];
+    }
+
+    /// <summary>
+    /// Returns the first registered entity of type T matching provided predicate. 
+    /// </summary>
+    public T? First<T>(Func<T, bool> predicate) where T : Entity
+    {
+        return _entities[typeof(T)].Values.Cast<T>().Where(predicate).FirstOrDefault();
     }
 
     /// <summary>
@@ -45,23 +54,6 @@ public sealed class Manager
     }
 
     /// <summary>
-    /// Returns true if player exists with specified name.
-    /// </summary>
-    public bool PlayerExists(string name)
-    {
-        return File.Exists(Path.Join(_contentPath, "Players", $"{name}.json"));
-    }
-
-    /// <summary>
-    /// Returns object if player exists with specified name.
-    /// </summary>
-    public Player? PlayerSearch(string name)
-    {
-        var path = Path.Join(_contentPath, "Players", $"{name}.json");
-        return File.Exists(path) ? JsonSerializer.Deserialize<Player>(File.ReadAllText(path)) : null;
-    }
-
-    /// <summary>
     /// Save provided Player to file system.
     /// </summary>
     public void Save(Player player)
@@ -70,7 +62,7 @@ public sealed class Manager
 
         _logger.LogInformation("Saving Player: {Id}", player.Id);
 
-        var path = Path.Join(_contentPath, "Players");
+        var path = Path.Join(ContentPath, "Players");
 
         var contents = JsonSerializer.Serialize(player, OPTIONS);
 
@@ -86,7 +78,7 @@ public sealed class Manager
 
         _logger.LogInformation("Saving Region: {Id}", region.Id);
 
-        var path = Path.Join(_contentPath, "Regions");
+        var path = Path.Join(ContentPath, "Regions");
 
         var contents = JsonSerializer.Serialize(region, OPTIONS);
 
@@ -99,7 +91,7 @@ public sealed class Manager
 
         _logger.LogInformation("Deleting Region: {Id}", region.Id);
 
-        var path = Path.Join(_contentPath, "Regions");
+        var path = Path.Join(ContentPath, "Regions");
 
         File.Delete(Path.Join(path, $"{region.Id}.json"));
     }
@@ -124,7 +116,7 @@ public sealed class Manager
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(x => _updateTimers[x] = new(driver));
 
-        var root = Path.Join(_contentPath, "Regions");
+        var root = Path.Join(ContentPath, "Regions");
 
         foreach (string path in Directory.GetFiles(root, "*.json"))
         {
