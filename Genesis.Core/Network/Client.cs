@@ -47,14 +47,6 @@ public sealed class Client : IDisposable
             {
                 driver.Runtime.DoProcedure("Logout", "DoLogout", driver, Player);
             }
-
-            message = $"<color red>{message}</color>";
-
-            Player?.Parent?.Unregister(Player);
-
-            SendBytes(message.ToBytes());
-
-            Player?.Unload(driver);
         }
         catch (Exception ex)
         {
@@ -69,8 +61,6 @@ public sealed class Client : IDisposable
             _socket.Close(CLOSE_TIMEOUT);
 
             _keepAlive.Dispose();
-
-            Player = null;
         }
     }
 
