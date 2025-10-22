@@ -61,6 +61,8 @@ public sealed class Client : IDisposable
             _socket.Close(CLOSE_TIMEOUT);
 
             _keepAlive.Dispose();
+
+            Player = null;
         }
     }
 

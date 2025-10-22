@@ -134,7 +134,7 @@ public sealed class Manager
 
         Enumerable.Range(0, _updateTimers.Length).ForEach(x => _updateTimers[x].Dispose());
 
-        Find<Region>(x => true).ForEach(x => x.Unload(driver));
+        Find<Region>(region => true).ForEach(region => region.Unload(driver));
 
         _logger.LogInformation("Content Manager Stopped");
     }
