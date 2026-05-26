@@ -62,11 +62,14 @@ public sealed class Manager
 
         _logger.LogInformation("Saving Player: {Id}", player.Id);
 
-        var path = Path.Join(ContentPath, "Players");
+        var directory = Path.Join(ContentPath, "Players");
+        var target = Path.Join(directory, $"{player.Name}.json");
+        var temp = Path.Join(directory, $"{player.Name}.tmp.json");
 
         var contents = JsonSerializer.Serialize(player, OPTIONS);
 
-        File.WriteAllText(Path.Join(path, $"{player.Name}.json"), contents);
+        File.WriteAllText(temp, contents);
+        File.Replace(temp, target, null);
     }
 
     /// <summary>
@@ -78,11 +81,14 @@ public sealed class Manager
 
         _logger.LogInformation("Saving Region: {Id}", region.Id);
 
-        var path = Path.Join(ContentPath, "Regions");
+        var directory = Path.Join(ContentPath, "Regions");
+        var target = Path.Join(directory, $"{region.Id}.json");
+        var temp = Path.Join(directory, $"{region.Id}.tmp.json");
 
         var contents = JsonSerializer.Serialize(region, OPTIONS);
 
-        File.WriteAllText(Path.Join(path, $"{region.Id}.json"), contents);
+        File.WriteAllText(temp, contents);
+        File.Replace(temp, target, null);
     }
 
     internal void DeleteRegion(Region region)

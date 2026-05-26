@@ -63,7 +63,7 @@ public abstract class Entity
     /// <summary>
     /// Retursn the hash code for this instance.
     /// </summary>
-    public override int GetHashCode() => Id.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Id.GetHashCode());
 
     /// <summary>
     /// Load entity into running game instance.
@@ -115,6 +115,13 @@ public abstract class Entity
 
     private Entity? FindMember(string keyword, ref int index, Func<Entity, bool>? predicate = null, Func<Entity, bool>? order = null)
     {
-        return Entities.OrderByDescending(x => order is null || order(x)).Find(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) && (predicate is null || predicate(x)), ref index);
+        var matches = Entities.Where(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) && (predicate is null || predicate(x)));
+
+        if (order is not null)
+        {
+            matches = matches.OrderByDescending(order);
+        }
+
+        return matches.Find(x => true, ref index);
     }
 }

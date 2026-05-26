@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Buffers;
+using System.Net.Sockets;
 using System.Text;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Logging;
@@ -163,19 +164,26 @@ public sealed class Client : IDisposable
     {
         ArgumentNullException.ThrowIfNull(driver);
 
-        var bytes = new byte[4096];
+        var bytes = ArrayPool<byte>.Shared.Rent(4096);
 
-        var count = await _socket.ReceiveAsync(bytes);
-
-        if (count == 0)
+        try
         {
-            Disconnect(driver, "Disconnected");
+            var count = await _socket.ReceiveAsync(bytes);
+
+            if (count == 0)
+            {
+                Disconnect(driver, "Disconnected");
+            }
+            else
+            {
+                var message = Encoding.UTF8.GetString(bytes).Split(CARRIAGE_RETURN);
+
+                ProcessMessage(driver, string.Join(' ', message[0].Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+            }
         }
-        else
+        finally
         {
-            var message = Encoding.UTF8.GetString(bytes).Split(CARRIAGE_RETURN);
-
-            ProcessMessage(driver, string.Join(' ', message[0].Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+            ArrayPool<byte>.Shared.Return(bytes);
         }
     }
 }
