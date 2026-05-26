@@ -26,7 +26,7 @@ public abstract class Entity
     [JsonInclude]
     public Dictionary<string, Dynamic> Properties
     {
-        get => _properties.ToDictionary(x => x.Key, x => x.Value);
+        get => new(_properties);
         init => value.ForEach(x => _properties[x.Key] = x.Value);
     }
 

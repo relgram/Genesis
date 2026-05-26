@@ -17,6 +17,8 @@ public static class Extensions
 
     public static T? Find<T>(this IEnumerable<T> @this, Predicate<T> match, ref int index)
     {
+        ArgumentNullException.ThrowIfNull(@this);
+
         foreach (var item in @this)
         {
             if (match(item) == true)
@@ -55,7 +57,9 @@ public static class Extensions
 
     public static void ForEach<T>(this IEnumerable<T> @this, Action<T> action)
     {
-        var exceptions = new List<Exception>();
+        ArgumentNullException.ThrowIfNull(@this);
+
+        Exception? firstException = null;
 
         foreach (var item in @this)
         {
@@ -65,13 +69,35 @@ public static class Extensions
             }
             catch (Exception ex)
             {
-                exceptions.Add(ex);
+                if (firstException is null)
+                {
+                    firstException = ex;
+                }
+                else
+                {
+                    var exceptions = new List<Exception> { firstException, ex };
+                    firstException = null;
+
+                    foreach (var remaining in @this)
+                    {
+                        try
+                        {
+                            action(remaining);
+                        }
+                        catch (Exception inner)
+                        {
+                            exceptions.Add(inner);
+                        }
+                    }
+
+                    throw new AggregateException(exceptions);
+                }
             }
         }
 
-        if (exceptions.Count > 0)
+        if (firstException is not null)
         {
-            throw new AggregateException(exceptions);
+            throw new AggregateException(firstException);
         }
     }
 

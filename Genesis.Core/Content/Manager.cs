@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,7 @@ public sealed class Manager
 {
     private static readonly JsonSerializerOptions OPTIONS = new() { WriteIndented = true };
 
-    private readonly Dictionary<Type, Dictionary<Guid, Entity>> _entities = [];
+    private readonly ConcurrentDictionary<Type, ConcurrentDictionary<Guid, Entity>> _entities = [];
     private readonly ILogger<Manager> _logger;
     private readonly UpdateTimer[] _updateTimers = new UpdateTimer[100];
 
@@ -110,7 +111,7 @@ public sealed class Manager
 
         if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
-            _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Register(entity);
+            _updateTimers[(uint)entity.Id.GetHashCode() % _updateTimers.Length].Register(entity);
         }
     }
 
@@ -151,9 +152,9 @@ public sealed class Manager
 
         _logger.LogInformation("Unregister {Type}: {Id}", entity.GetType().Name, entity.Id);
 
-        if (_entities[entity.GetType()].Remove(entity.Id) == true)
+        if (_entities[entity.GetType()].TryRemove(entity.Id, out _) == true)
         {
-            _updateTimers[(uint)entity.GetHashCode() % _updateTimers.Length].Unregister(entity);
+            _updateTimers[(uint)entity.Id.GetHashCode() % _updateTimers.Length].Unregister(entity);
         }
     }
 }

@@ -168,7 +168,9 @@ public sealed class Client : IDisposable
 
         try
         {
-            var count = await _socket.ReceiveAsync(bytes);
+            var buffer = new Memory<byte>(bytes, 0, bytes.Length);
+            
+            var count = await _socket.ReceiveAsync(buffer, SocketFlags.None);
 
             if (count == 0)
             {
@@ -176,7 +178,7 @@ public sealed class Client : IDisposable
             }
             else
             {
-                var message = Encoding.UTF8.GetString(bytes).Split(CARRIAGE_RETURN);
+                var message = Encoding.UTF8.GetString(bytes, 0, count).Split(CARRIAGE_RETURN);
 
                 ProcessMessage(driver, string.Join(' ', message[0].Split(' ', StringSplitOptions.RemoveEmptyEntries)));
             }
