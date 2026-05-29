@@ -1,8 +1,8 @@
-﻿using System.Buffers;
+﻿using Genesis.Core.Entities;
+using Microsoft.Extensions.Logging;
+using System.Buffers;
 using System.Net.Sockets;
 using System.Text;
-using Genesis.Core.Entities;
-using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Network;
 
@@ -46,7 +46,7 @@ public sealed class Client : IDisposable
         {
             if (Player is not null)
             {
-                driver.Runtime.DoProcedure("Logout", "DoLogout", driver, Player);
+                driver.Runtime.DoProcedure("Logout", "DoLogout", driver, Player, message);
             }
         }
         catch (Exception ex)

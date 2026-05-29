@@ -165,8 +165,8 @@ public sealed class Manager
                 }
             }
 
-            _logger.LogInformation("Loaded {Count} Actions", _actions.Count);
-            _logger.LogInformation("Loaded {Count} Procedures", _procedures.Count);
+            //_logger.LogInformation("Loaded {Count} Actions", _actions.Count);
+            //_logger.LogInformation("Loaded {Count} Procedures", _procedures.Count);
 
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_actions.Count} Actions\n"));
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes($"Loaded {_procedures.Count} Procedures\n>\n"));

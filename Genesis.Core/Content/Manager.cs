@@ -1,8 +1,8 @@
-﻿using System.Collections.Concurrent;
-using System.Text.Json;
-using Genesis.Core.Entities;
+﻿using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace Genesis.Core.Content;
 
@@ -61,7 +61,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(player);
 
-        _logger.LogInformation("Saving Player: {Id}", player.Id);
+        //_logger.LogInformation("Saving Player: {Id}", player.Id);
 
         var directory = Path.Join(ContentPath, "Players");
         var target = Path.Join(directory, $"{player.Name}.json");
@@ -80,7 +80,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(region);
 
-        _logger.LogInformation("Saving Region: {Id}", region.Id);
+        //_logger.LogInformation("Saving Region: {Id}", region.Id);
 
         var directory = Path.Join(ContentPath, "Regions");
         var target = Path.Join(directory, $"{region.Id}.json");
@@ -96,7 +96,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(region);
 
-        _logger.LogInformation("Deleting Region: {Id}", region.Id);
+        //_logger.LogInformation("Deleting Region: {Id}", region.Id);
 
         var path = Path.Join(ContentPath, "Regions");
 
@@ -107,7 +107,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Register {Type}: {Id}", entity.GetType().Name, entity.Id);
+        //_logger.LogInformation("Register {Type}: {Id}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
@@ -150,7 +150,7 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        _logger.LogInformation("Unregister {Type}: {Id}", entity.GetType().Name, entity.Id);
+        //_logger.LogInformation("Unregister {Type}: {Id}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].TryRemove(entity.Id, out _) == true)
         {

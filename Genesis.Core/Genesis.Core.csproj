@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>CA1873</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
