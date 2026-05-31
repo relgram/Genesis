@@ -33,41 +33,23 @@ public abstract class Entity
     [JsonIgnore]
     protected HashSet<Entity> Entities { get; } = [];
 
-    /// <summary>
-    /// Gets or sets the property associated with the given key.
-    /// </summary>
     public Dynamic this[string key]
     {
         get => _properties.GetValueOrDefault(key, Dynamic.Empty);
         set => _properties[key] = value ?? Dynamic.Empty;
     }
 
-    /// <summary>
-    /// Determines whether the specified Entity is equal to the current Entity.
-    /// </summary>
     public bool Equals(Entity? other) => other is not null && Id == other.Id;
 
-    /// <summary>
-    /// Determines whether the specified object is equal to the current object.
-    /// </summary>
     public override bool Equals(object? obj) => Equals(obj as Entity);
 
-    /// <summary>
-    /// Locate registered entity with specified keyword, optional filtering predicate and optional ordering.
-    /// </summary>
     public Entity? FindMember(string keyword, int index = 0, Func<Entity, bool>? predicate = null, Func<Entity, bool>? order = null)
     {
         return string.IsNullOrWhiteSpace(keyword) ? default : FindMember(keyword, ref index, predicate, order);
     }
 
-    /// <summary>
-    /// Retursn the hash code for this instance.
-    /// </summary>
     public override int GetHashCode() => HashCode.Combine(Id.GetHashCode());
 
-    /// <summary>
-    /// Load entity into running game instance.
-    /// </summary>
     public void Load(Driver driver)
     {
         ArgumentNullException.ThrowIfNull(driver);
@@ -77,9 +59,6 @@ public abstract class Entity
         Entities.ForEach(x => x.Load(driver));
     }
 
-    /// <summary>
-    /// Unload entity from running game instance.
-    /// </summary>
     public virtual void Unload(Driver driver)
     {
         ArgumentNullException.ThrowIfNull(driver);
@@ -117,10 +96,7 @@ public abstract class Entity
     {
         var matches = Entities.Where(x => x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) && (predicate is null || predicate(x)));
 
-        if (order is not null)
-        {
-            matches = matches.OrderByDescending(order);
-        }
+        if (order is not null)  matches = matches.OrderByDescending(order);
 
         return matches.Find(x => true, ref index);
     }

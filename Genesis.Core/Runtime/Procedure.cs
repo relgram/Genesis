@@ -1,14 +1,10 @@
-﻿namespace Genesis.Core.Runtime;
+﻿using Genesis.Core.Content;
+
+namespace Genesis.Core.Runtime;
 
 public abstract class Procedure
 {
-    /// <summary>
-    /// Gets unique name of the procedure.
-    /// </summary>
     public abstract string Name { get; }
 
-    /// <summary>
-    /// Executes static member of procedure matching provided method and arguments.
-    /// </summary>
-    public abstract bool Execute(string method, params object[] args);
+    public abstract bool TryExecute(Driver driver, Entity sender, string method, object[] args);
 }

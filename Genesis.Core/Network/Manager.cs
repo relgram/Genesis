@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Network;
 
@@ -26,8 +26,6 @@ public sealed class Manager : IDisposable
     internal void Register(Client client)
     {
         ArgumentNullException.ThrowIfNull(client);
-
-        //_logger.LogInformation("Register client: {Address}", client.Address);
 
         if (_clients.TryAdd(client.Id, client) == false)
         {
@@ -70,8 +68,6 @@ public sealed class Manager : IDisposable
     internal void Unregister(Client client)
     {
         ArgumentNullException.ThrowIfNull(client);
-
-        //_logger.LogInformation("Unregister client: {Address}", client.Address);
 
         if (_clients.TryRemove(client.Id, out _) == false)
         {

@@ -1,15 +1,13 @@
-﻿using Genesis.Core.Entities;
-using Microsoft.Extensions.Logging;
-using System.Buffers;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
+using Genesis.Core.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Genesis.Core.Network;
 
 public sealed class Client : IDisposable
 {
-    private const char CARRIAGE_RETURN = '\r';
-    private static readonly int CLOSE_TIMEOUT = 100;
+    private static readonly int TIMEOUT = 100;
 
     private readonly Timer _keepAlive;
     private readonly ILogger<Client> _logger;
@@ -28,7 +26,7 @@ public sealed class Client : IDisposable
 
     public string Address { get; }
 
-    public Player? Player { get; private set; }
+    public Player Player { get; private set; } = new("");
 
     public Guid Id { get; } = Guid.NewGuid();
 
@@ -46,7 +44,7 @@ public sealed class Client : IDisposable
         {
             if (Player is not null)
             {
-                driver.Runtime.DoProcedure("Logout", "DoLogout", driver, Player, message);
+                driver.Runtime.DoProcedure(Player, "Logout", "DoLogout", message);
             }
         }
         catch (Exception ex)
@@ -59,17 +57,14 @@ public sealed class Client : IDisposable
 
             driver.Network.Unregister(this);
 
-            _socket.Close(CLOSE_TIMEOUT);
-
-            _keepAlive.Dispose();
-
-            Player = null;
+            _socket.Close(TIMEOUT);
         }
     }
 
     public void Dispose()
     {
-        _socket.Dispose();
+        _keepAlive?.Dispose();
+        _socket?.Dispose();
     }
 
     public void SendBytes(byte[] bytes)
@@ -100,6 +95,12 @@ public sealed class Client : IDisposable
 
         try
         {
+
+            Player = new("")
+            {
+                Client = this
+            };
+
             driver.Network.Register(this);
 
             ReceiveAsync(driver).FireAndForget(ex =>
@@ -107,7 +108,7 @@ public sealed class Client : IDisposable
                 Disconnect(driver, "ReceiveAsync failed unexpectedly");
             });
 
-            driver.Runtime.DoProcedure(Procedure, $"Do{Procedure}", driver, this);
+            driver.Runtime.DoProcedure(Player, Procedure, $"Do{Procedure}");
         }
         catch (Exception ex)
         {
@@ -132,14 +133,16 @@ public sealed class Client : IDisposable
             {
                 if (string.IsNullOrWhiteSpace(Procedure) == true)
                 {
-                    if (Player is not null)
+                    if (message[0] == '\'')
                     {
-                        driver.Runtime.DoAction(driver, Player, message.Trim());
+                        message = $"say {message[1..]}";
                     }
+
+                    driver.Runtime.DoAction(Player, message);
                 }
                 else
                 {
-                    driver.Runtime.DoProcedure(Procedure, $"Do{Procedure}", driver, this, message.Trim());
+                    driver.Runtime.DoProcedure(Player, Procedure, $"Do{Procedure}", message);
                 }
             }
         }
@@ -147,45 +150,52 @@ public sealed class Client : IDisposable
         {
             _logger.LogWarning(ex, "ProcessMessage Failed Unexpectedly");
         }
-        finally
-        {
-            if (_socket.Connected == true)
-            {
-                ReceiveAsync(driver).FireAndForget(ex =>
-                {
-                    Disconnect(driver, "Connection failed unexpectedly");
-                    _logger.LogWarning(ex, "ProcessMessage failed unexpectedly");
-                });
-            }
-        }
     }
 
     private async Task ReceiveAsync(Driver driver)
     {
         ArgumentNullException.ThrowIfNull(driver);
 
-        var bytes = ArrayPool<byte>.Shared.Rent(4096);
+        byte[] buffer = new byte[128];
 
-        try
+        StringBuilder messageBuilder = new();
+
+        while (_socket.Connected == true)
         {
-            var buffer = new Memory<byte>(bytes, 0, bytes.Length);
-            
-            var count = await _socket.ReceiveAsync(buffer, SocketFlags.None);
-
-            if (count == 0)
+            try
             {
-                Disconnect(driver, "Disconnected");
-            }
-            else
-            {
-                var message = Encoding.UTF8.GetString(bytes, 0, count).Split(CARRIAGE_RETURN);
+                var count = await _socket.ReceiveAsync(buffer);
 
-                ProcessMessage(driver, string.Join(' ', message[0].Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+                if (count == 0)
+                {
+                    Disconnect(driver, "Disconnected");
+                }
+                else
+                {
+                    string chunk = Encoding.UTF8.GetString(buffer, 0, count);
+
+                    int terminatorIndex = chunk.IndexOf('\r');
+
+                    if (terminatorIndex < 0)
+                    {
+                        messageBuilder.Append(chunk.AsSpan());
+                    }
+                    else
+                    {
+                        messageBuilder.Append(chunk.AsSpan(0, terminatorIndex)).SingleSpace();
+
+                        ProcessMessage(driver, messageBuilder.ToString());
+
+                        messageBuilder.Clear();
+                    }
+                }
             }
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(bytes);
+            catch (Exception ex)
+            {
+                messageBuilder.Clear();
+
+                _logger.LogWarning(ex, "ReceiveAsync Failed Unexpectedly");
+            }
         }
     }
 }

@@ -12,7 +12,7 @@ internal sealed class UpdateTimer : IDisposable
     public UpdateTimer(Driver driver)
     {
         _driver = driver ?? throw new ArgumentNullException(nameof(driver));
-        _timer = new Timer(Elapsed, null, Random.Shared.Next(0, 100), 1_000);
+        _timer = new Timer(Elapsed, null, Random.Shared.Next(0, 1_000), 1_000);
     }
 
     public void Dispose()
@@ -49,14 +49,7 @@ internal sealed class UpdateTimer : IDisposable
         {
             foreach (var entity in _entities.Values)
             {
-                if (entity.Parent is null)
-                {
-                    _driver.Runtime.DoProcedure("Update", "OnUpdate", _driver, entity);
-                }
-                else
-                {
-                    _driver.Runtime.DoProcedure("Update", "OnUpdate", _driver, entity, entity.Parent);
-                }
+                _driver.Runtime.DoProcedure(entity, "Update", $"DoUpdate{entity.GetType().Name}");
             }
         }
     }

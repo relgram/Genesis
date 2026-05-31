@@ -30,84 +30,64 @@ public sealed class Manager
 
     public string ContentPath { get; }
 
-    /// <summary>
-    /// Returns array of all registered entities of type T matching provided predicate.
-    /// </summary>
     public T[] Find<T>(Func<T, bool> predicate) where T : Entity
     {
         return [.. _entities[typeof(T)].Values.Cast<T>().Where(predicate)];
     }
 
-    /// <summary>
-    /// Returns the first registered entity of type T matching provided predicate. 
-    /// </summary>
     public T? First<T>(Func<T, bool> predicate) where T : Entity
     {
         return _entities[typeof(T)].Values.Cast<T>().Where(predicate).FirstOrDefault();
     }
 
-    /// <summary>
-    /// Returns registered entity of type T with specified entityId.
-    /// </summary>
     public T? Get<T>(Guid entityId) where T : Entity
     {
         return _entities[typeof(T)].GetValueOrDefault(entityId) as T;
     }
 
-    /// <summary>
-    /// Save provided Player to file system.
-    /// </summary>
     public void Save(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
 
-        //_logger.LogInformation("Saving Player: {Id}", player.Id);
-
         var directory = Path.Join(ContentPath, "Players");
-        var target = Path.Join(directory, $"{player.Name}.json");
-        var temp = Path.Join(directory, $"{player.Name}.tmp.json");
-
+        var dest = Path.Join(directory, $"{player.Name}.json");
+        var temp = Path.Join(directory, $"{player.Name}.temp.json");
         var contents = JsonSerializer.Serialize(player, OPTIONS);
 
-        File.WriteAllText(temp, contents);
-        File.Replace(temp, target, null);
+        if (File.Exists(dest) == false)
+        {
+            File.WriteAllText(dest, contents);
+        }
+        else
+        {
+            File.WriteAllText(temp, contents);
+            File.Replace(temp, dest, destinationBackupFileName: null);
+        }
     }
 
-    /// <summary>
-    /// Save provided Region to file system.
-    /// </summary>
     public void Save(Region region)
     {
         ArgumentNullException.ThrowIfNull(region);
 
-        //_logger.LogInformation("Saving Region: {Id}", region.Id);
-
         var directory = Path.Join(ContentPath, "Regions");
-        var target = Path.Join(directory, $"{region.Id}.json");
-        var temp = Path.Join(directory, $"{region.Id}.tmp.json");
-
+        var dest = Path.Join(directory, $"{region.Id}.json");
+        var temp = Path.Join(directory, $"{region.Id}.temp.json");
         var contents = JsonSerializer.Serialize(region, OPTIONS);
 
-        File.WriteAllText(temp, contents);
-        File.Replace(temp, target, null);
-    }
-
-    internal void DeleteRegion(Region region)
-    {
-        ArgumentNullException.ThrowIfNull(region);
-
-        //_logger.LogInformation("Deleting Region: {Id}", region.Id);
-
-        var path = Path.Join(ContentPath, "Regions");
-
-        File.Delete(Path.Join(path, $"{region.Id}.json"));
+        if (File.Exists(dest) == false)
+        {
+            File.WriteAllText(dest, contents);
+        }
+        else
+        {
+            File.WriteAllText(temp, contents);
+            File.Replace(temp, dest, destinationBackupFileName: null);
+        }
     }
 
     internal void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-
-        //_logger.LogInformation("Register {Type}: {Id}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
@@ -149,8 +129,6 @@ public sealed class Manager
     internal void Unregister(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-
-        //_logger.LogInformation("Unregister {Type}: {Id}", entity.GetType().Name, entity.Id);
 
         if (_entities[entity.GetType()].TryRemove(entity.Id, out _) == true)
         {

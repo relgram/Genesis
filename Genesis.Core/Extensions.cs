@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Genesis.Core;
@@ -59,7 +58,7 @@ public static class Extensions
     {
         ArgumentNullException.ThrowIfNull(@this);
 
-        Exception? firstException = null;
+        List<Exception>? exceptions = null;
 
         foreach (var item in @this)
         {
@@ -69,40 +68,24 @@ public static class Extensions
             }
             catch (Exception ex)
             {
-                if (firstException is null)
-                {
-                    firstException = ex;
-                }
-                else
-                {
-                    var exceptions = new List<Exception> { firstException, ex };
-                    firstException = null;
-
-                    foreach (var remaining in @this)
-                    {
-                        try
-                        {
-                            action(remaining);
-                        }
-                        catch (Exception inner)
-                        {
-                            exceptions.Add(inner);
-                        }
-                    }
-
-                    throw new AggregateException(exceptions);
-                }
+                (exceptions ??= []).Add(ex);
             }
         }
 
-        if (firstException is not null)
+        if (exceptions is not null)
         {
-            throw new AggregateException(firstException);
+            throw new AggregateException(exceptions);
         }
     }
 
-    public static byte[] ToBytes(this string @this)
+    public static void SingleSpace(this StringBuilder @this)
     {
-        return string.IsNullOrWhiteSpace(@this) ? [] : Encoding.UTF8.GetBytes(@this);
+        for (int i = @this.Length - 1; i > 0; i--)
+        {
+            if (@this[i] == ' ' && @this[i - 1] == ' ')
+            {
+                @this.Remove(i, 1);
+            }
+        }
     }
 }
