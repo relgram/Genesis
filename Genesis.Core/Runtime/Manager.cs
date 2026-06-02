@@ -223,9 +223,7 @@ public sealed class Manager : IDisposable
                 {
                     if (request is ActionRequest actionRequest)
                     {
-                        Type entityType = actionRequest.Sender.GetType();
-
-                        if (driver.Content.IsRegistered(entityType, actionRequest.Sender) == true)
+                        if (actionRequest.Sender.IsRegistered == true)
                         {
                             if (actionRequest.Action.TryExecute(driver, actionRequest.Sender, actionRequest.Message) == false)
                             {
@@ -236,9 +234,7 @@ public sealed class Manager : IDisposable
 
                     if (request is ProcedureRequest procedureRequest)
                     {
-                        Type entityType = procedureRequest.Sender.GetType();
-
-                        if (driver.Content.IsRegistered(entityType, procedureRequest.Sender) == true)
+                        if (procedureRequest.Sender.IsRegistered == true)
                         {
                             procedureRequest.Procedure.TryExecute(driver, procedureRequest.Sender, procedureRequest.Method, procedureRequest.Args);
                         }

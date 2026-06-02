@@ -18,6 +18,9 @@ public abstract class Entity
 
     public Guid Id { get; init; } = Guid.NewGuid();
 
+    [JsonIgnore]
+    public bool IsRegistered { get; internal set; }
+
     public string Name { get; set; }
 
     [JsonIgnore]

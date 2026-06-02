@@ -45,11 +45,6 @@ public sealed class Manager
         return _entities[typeof(T)].GetValueOrDefault(entityId) as T;
     }
 
-    public bool IsRegistered(Type type, Entity entity)
-    {
-        return _entities[type].ContainsKey(entity.Id);
-    }
-
     public void Save(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
@@ -96,6 +91,7 @@ public sealed class Manager
 
         if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
+            entity.IsRegistered = true;
             _updateTimers[(uint)entity.Id.GetHashCode() % _updateTimers.Length].Register(entity);
         }
     }
@@ -137,6 +133,7 @@ public sealed class Manager
 
         if (_entities[entity.GetType()].TryRemove(entity.Id, out _) == true)
         {
+            entity.IsRegistered = false;
             _updateTimers[(uint)entity.Id.GetHashCode() % _updateTimers.Length].Unregister(entity);
         }
     }
