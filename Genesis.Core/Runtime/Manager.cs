@@ -1,23 +1,29 @@
-﻿using System.Collections.Concurrent;
-using System.Runtime.Loader;
-using System.Text;
-using Genesis.Core.Content;
+﻿using Genesis.Core.Content;
 using Genesis.Core.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
+using System.Runtime.Loader;
+using System.Text;
 
 namespace Genesis.Core.Runtime;
 
 public sealed class Manager : IDisposable
 {
+    private interface IProcessRequest
+    {
+    }
+
+    public record ActionRequest(Action Action, Player Sender, string Message) : IProcessRequest;
+
+    public record ProcedureRequest(Procedure Procedure, Entity Sender, string Method, object[] Args) : IProcessRequest;
+
     private readonly ConcurrentDictionary<string, Action> _actions = [];
-    private readonly ConcurrentQueue<(Action action, Player sender, string message)> _actionsQueue = [];
-    private Task? _backgroundActionWorker;
-    private Task? _backgroundProcedureWorker;
+    private Task? _backgroundWorker;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly ILogger<Manager> _logger;
     private readonly ConcurrentDictionary<string, Procedure> _procedures = [];
-    private readonly ConcurrentQueue<(Procedure procedure, Entity sender, string method, object[] args)> _proceduresQueue = [];
+    private readonly ConcurrentQueue<IProcessRequest> _requestQueue = [];
 
     public Manager(ILogger<Manager> logger, IConfiguration configuration)
     {
@@ -43,22 +49,21 @@ public sealed class Manager : IDisposable
 
             if (_actions.TryGetValue(name, out Action? action) == true)
             {
-                _actionsQueue.Enqueue((action, sender, message));
+                _requestQueue.Enqueue(new ActionRequest(action, sender, message));
+                return;
             }
-            else
-            {
-                foreach (var item in _actions)
-                {
-                    if (item.Key.Length >= name.Length)
-                    {
-                        if (item.Key.StartsWith(name, true, null))
-                        {
-                            _actionsQueue.Enqueue((item.Value, sender, message));
-                            return;
-                        }
-                    }
-                }
-            }
+
+            //foreach (var item in _actions)
+            //{
+            //    if (item.Key.Length >= name.Length)
+            //    {
+            //        if (item.Key.StartsWith(name, true, null))
+            //        {
+            //            _requestQueue.Enqueue(new ActionRequest(item.Value, sender, message));
+            //            return;
+            //        }
+            //    }
+            //}
 
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Please rephrase that command.\n>\n"));
         }
@@ -79,7 +84,7 @@ public sealed class Manager : IDisposable
 
             if (_procedures.TryGetValue(name, out Procedure? procedure) == true)
             {
-                _proceduresQueue.Enqueue((procedure, sender, method, args));
+                _requestQueue.Enqueue(new ProcedureRequest(procedure, sender, method, args));
                 return true;
             }
         }
@@ -181,11 +186,7 @@ public sealed class Manager : IDisposable
 
         LoadLibrary(sender: null);
 
-        _backgroundActionWorker = Task.Factory.StartNew(() => ProcessActionsAsync(driver), cancellationToken,
-            TaskCreationOptions.LongRunning, TaskScheduler.Default)
-            .Unwrap();
-
-        _backgroundProcedureWorker = Task.Factory.StartNew(() => ProcessProceduresAsync(driver), cancellationToken,
+        _backgroundWorker = Task.Factory.StartNew(() => ProcessAsync(driver), cancellationToken,
             TaskCreationOptions.LongRunning, TaskScheduler.Default)
             .Unwrap();
 
@@ -202,8 +203,7 @@ public sealed class Manager : IDisposable
 
         Task.WaitAll
         (
-            _backgroundActionWorker ?? Task.CompletedTask,
-            _backgroundProcedureWorker ?? Task.CompletedTask
+            _backgroundWorker ?? Task.CompletedTask
         );
 
         _cancellationTokenSource.Dispose();
@@ -211,46 +211,33 @@ public sealed class Manager : IDisposable
         _logger.LogInformation("Runtime Manager Stopped");
     }
 
-    private Task ProcessActionsAsync(Driver driver)
+    private Task ProcessAsync(Driver driver)
     {
+        byte[] ActionFailedBytes = Encoding.UTF8.GetBytes("I could not find what you are referring to.\n>\n");
+
         while (_cancellationTokenSource.IsCancellationRequested == false)
         {
             try
             {
-                if (_actionsQueue.TryDequeue(out var item) == true)
+                if (_requestQueue.TryDequeue(out IProcessRequest? request) == true)
                 {
-                    if (item.action.TryExecute(driver, item.sender, item.message) == false)
+                    if (request is ActionRequest actionRequest)
                     {
-                        item.sender.Client?.SendBytes(Encoding.UTF8.GetBytes("I could not find what you are referring to.\n>\n"));
+                        if (actionRequest.Action.TryExecute(driver, actionRequest.Sender, actionRequest.Message) == false)
+                        {
+                            actionRequest.Sender.Client?.SendBytes(ActionFailedBytes);
+                        }
+                    }
+
+                    if (request is ProcedureRequest procedureRequest)
+                    {
+                        procedureRequest.Procedure.TryExecute(driver, procedureRequest.Sender, procedureRequest.Method, procedureRequest.Args);
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "ProcessActionsAsync failed unexpectedly");
-            }
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private Task ProcessProceduresAsync(Driver driver)
-    {
-        while (_cancellationTokenSource.IsCancellationRequested == false)
-        {
-            try
-            {
-                if (_proceduresQueue.TryDequeue(out var item) == true)
-                {
-                    if (item.procedure.TryExecute(driver, item.sender, item.method, item.args) == false)
-                    {
-                        _logger.LogWarning("Failed to process procedure {Name}:{Method}", item.procedure.Name, item.method);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "ProcessProceduresAsync failed unexpectedly");
             }
         }
 

@@ -73,7 +73,10 @@ public sealed class Client : IDisposable
         {
             _socket.SendAsync(bytes).FireAndForget(ex =>
             {
-                _logger.LogWarning(ex, "SendBytes failed unexpectedly");
+                if (_socket.Connected == true)
+                {
+                    _logger.LogWarning(ex, "SendBytes failed unexpectedly");
+                }
             });
         }
     }
@@ -95,7 +98,6 @@ public sealed class Client : IDisposable
 
         try
         {
-
             Player = new("")
             {
                 Client = this
