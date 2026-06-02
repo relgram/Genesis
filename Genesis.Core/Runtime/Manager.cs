@@ -223,15 +223,25 @@ public sealed class Manager : IDisposable
                 {
                     if (request is ActionRequest actionRequest)
                     {
-                        if (actionRequest.Action.TryExecute(driver, actionRequest.Sender, actionRequest.Message) == false)
+                        Type entityType = actionRequest.Sender.GetType();
+
+                        if (driver.Content.IsRegistered(entityType, actionRequest.Sender) == true)
                         {
-                            actionRequest.Sender.Client?.SendBytes(ActionFailedBytes);
+                            if (actionRequest.Action.TryExecute(driver, actionRequest.Sender, actionRequest.Message) == false)
+                            {
+                                actionRequest.Sender.Client?.SendBytes(ActionFailedBytes);
+                            }
                         }
                     }
 
                     if (request is ProcedureRequest procedureRequest)
                     {
-                        procedureRequest.Procedure.TryExecute(driver, procedureRequest.Sender, procedureRequest.Method, procedureRequest.Args);
+                        Type entityType = procedureRequest.Sender.GetType();
+
+                        if (driver.Content.IsRegistered(entityType, procedureRequest.Sender) == true)
+                        {
+                            procedureRequest.Procedure.TryExecute(driver, procedureRequest.Sender, procedureRequest.Method, procedureRequest.Args);
+                        }
                     }
                 }
             }

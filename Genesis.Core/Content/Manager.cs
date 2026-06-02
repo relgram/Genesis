@@ -45,6 +45,11 @@ public sealed class Manager
         return _entities[typeof(T)].GetValueOrDefault(entityId) as T;
     }
 
+    public bool IsRegistered(Type type, Entity entity)
+    {
+        return _entities[type].ContainsKey(entity.Id);
+    }
+
     public void Save(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
