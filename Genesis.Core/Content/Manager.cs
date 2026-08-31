@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Numerics;
 using System.Text.Json;
 
 namespace Genesis.Core.Content;
@@ -49,6 +50,11 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(player);
 
+        if (_logger.IsEnabled(LogLevel.Information) == true)
+        {
+            _logger.LogInformation("Saving Player: {Name}", player.Name);
+        }
+
         var directory = Path.Join(ContentPath, "Players");
         var dest = Path.Join(directory, $"{player.Name}.json");
         var temp = Path.Join(directory, $"{player.Name}.temp.json");
@@ -69,6 +75,11 @@ public sealed class Manager
     {
         ArgumentNullException.ThrowIfNull(region);
 
+        if (_logger.IsEnabled(LogLevel.Information) == true)
+        {
+            _logger.LogInformation("Saving Region: {Name}", region.Name);
+        }
+
         var directory = Path.Join(ContentPath, "Regions");
         var dest = Path.Join(directory, $"{region.Id}.json");
         var temp = Path.Join(directory, $"{region.Id}.temp.json");
@@ -88,6 +99,11 @@ public sealed class Manager
     internal void Register(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        if (_logger.IsEnabled(LogLevel.Information) == true)
+        {
+            _logger.LogInformation("Register Entity: {Name}", entity.Name);
+        }
 
         if (_entities[entity.GetType()].TryAdd(entity.Id, entity) == true)
         {
@@ -130,6 +146,11 @@ public sealed class Manager
     internal void Unregister(Entity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        if (_logger.IsEnabled(LogLevel.Information) == true)
+        {
+            _logger.LogInformation("Unregister Entity: {Name}", entity.Name);
+        }
 
         if (_entities[entity.GetType()].TryRemove(entity.Id, out _) == true)
         {

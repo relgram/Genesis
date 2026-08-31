@@ -53,17 +53,17 @@ public sealed class Manager : IDisposable
                 return;
             }
 
-            //foreach (var item in _actions)
-            //{
-            //    if (item.Key.Length >= name.Length)
-            //    {
-            //        if (item.Key.StartsWith(name, true, null))
-            //        {
-            //            _requestQueue.Enqueue(new ActionRequest(item.Value, sender, message));
-            //            return;
-            //        }
-            //    }
-            //}
+            foreach (var item in _actions)
+            {
+                if (item.Key.Length >= name.Length)
+                {
+                    if (item.Key.StartsWith(name, true, null))
+                    {
+                        _requestQueue.Enqueue(new ActionRequest(item.Value, sender, message));
+                        return;
+                    }
+                }
+            }
 
             sender?.Client?.SendBytes(Encoding.UTF8.GetBytes("Please rephrase that command.\n>\n"));
         }

@@ -1,7 +1,7 @@
-﻿using System.Net.Sockets;
-using System.Text;
-using Genesis.Core.Entities;
+﻿using Genesis.Core.Entities;
 using Microsoft.Extensions.Logging;
+using System.Net.Sockets;
+using System.Text;
 
 namespace Genesis.Core.Network;
 
@@ -86,8 +86,10 @@ public sealed class Client : IDisposable
         ArgumentNullException.ThrowIfNull(driver);
         ArgumentNullException.ThrowIfNull(player);
 
-        Player?.Client?.Disconnect(driver);
         Procedure = string.Empty;
+        Player?.Client = null;
+
+        player.Client?.Disconnect(driver);
         player.Client = this;
         Player = player;
     }
@@ -104,6 +106,8 @@ public sealed class Client : IDisposable
             };
 
             driver.Network.Register(this);
+
+            driver.Content.Register(Player);
 
             ReceiveAsync(driver).FireAndForget(ex =>
             {
